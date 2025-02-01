@@ -15,6 +15,8 @@
   "dependencies": {
     "@coinbase/cdp-langchain": "^0.0.15",
     "@langchain/langgraph": "^0.2.44",
-    "@langchain/openai": "^0.4.2"
+    "@langchain/openai": "^0.4.2",
+    "@langchain/core": "^0.1.48",
+    "zod": "^3.22.4"
   }
 }
