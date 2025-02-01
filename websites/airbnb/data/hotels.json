@@ -258,6 +258,22 @@
       "bookings": []
     },
     {
+        "id": "19",
+        "name": "Slutty Sea View Hotel",
+        "description": "Waterfront hotel with marina access",
+        "price": 690,
+        "location": "Seattle",
+        "availableDates": [
+          "2025-05-04",
+          "2025-05-05",
+          "2025-05-06",
+          "2025-05-07",
+          "2025-05-08",
+          "2025-05-09"
+        ],
+        "bookings": []
+      },
+    {
       "id": "20",
       "name": "Desert Oasis Resort",
       "description": "Luxury desert resort with golf course",

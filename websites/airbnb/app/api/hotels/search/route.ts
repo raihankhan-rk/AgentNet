@@ -21,11 +21,16 @@ export async function GET(request: Request) {
   // Use the hotels data from the JSON file
   const hotels = hotelsData.hotels;
 
-  const filteredHotels = hotels.map(hotel => {
-    const matchesPlace = place 
-      ? hotel.location.toLowerCase().includes(place.toLowerCase())
-      : true;
-    
+  // First filter by place if provided
+  let filteredHotels = hotels;
+  if (place) {
+    filteredHotels = hotels.filter(hotel => 
+      hotel.location.toLowerCase().includes(place.toLowerCase())
+    );
+  }
+
+  // Then check dates for the filtered hotels
+  const hotelsWithDates = filteredHotels.map(hotel => {
     let dateMatches: string[] = [];
     if (checkIn && checkOut) {
       dateMatches = hotel.availableDates.filter(date => {
@@ -47,7 +52,7 @@ export async function GET(request: Request) {
   });
 
   // Sort hotels: exact matches first, then nearby dates
-  const sortedHotels = filteredHotels.sort((a, b) => {
+  const sortedHotels = hotelsWithDates.sort((a, b) => {
     if (a.matchesExactDates && !b.matchesExactDates) return -1;
     if (!a.matchesExactDates && b.matchesExactDates) return 1;
     return 0;
