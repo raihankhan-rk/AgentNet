@@ -3,17 +3,17 @@ import fs from 'fs';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 
-export async function POST(
-  request: Request,
-  { params }: { params: { hotelId: string } }
-) {
+export async function POST(request: Request) {
   try {
+    // Extract hotelId from URL
+    const hotelId = request.url.split('/hotels/')[1].split('/')[0];
+    
     const { checkIn, checkOut, guests } = await request.json();
     const filePath = path.join(process.cwd(), 'data', 'hotels.json');
     const fileContents = fs.readFileSync(filePath, 'utf8');
     const data = JSON.parse(fileContents);
 
-    const hotel = data.hotels.find((h: any) => h.id === params.hotelId);
+    const hotel = data.hotels.find((h: any) => h.id === hotelId);
     if (!hotel) {
       return NextResponse.json({ error: 'Hotel not found' }, { status: 404 });
     }

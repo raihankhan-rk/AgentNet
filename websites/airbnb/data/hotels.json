@@ -15,12 +15,17 @@
       "description": "Cozy mountain retreat with scenic views",
       "price": 150,
       "location": "Aspen",
-      "availableDates": [
-        "2025-03-20",
-        "2025-03-21",
-        "2025-03-22"
-      ],
-      "bookings": []
+      "availableDates": [],
+      "bookings": [
+        {
+          "id": "65887ecd-d9be-405a-8ff6-70d9a7b31c90",
+          "userId": "user123",
+          "checkIn": "2025-03-20",
+          "checkOut": "2025-03-22",
+          "guests": 1,
+          "totalPrice": 300
+        }
+      ]
     },
     {
       "id": "3",
@@ -28,7 +33,11 @@
       "description": "Modern luxury hotel in the heart of downtown",
       "price": 280,
       "location": "New York City",
-      "availableDates": ["2025-03-15", "2025-03-16", "2025-03-17"],
+      "availableDates": [
+        "2025-03-15",
+        "2025-03-16",
+        "2025-03-17"
+      ],
       "bookings": []
     },
     {
@@ -37,7 +46,11 @@
       "description": "Luxurious desert retreat with spa facilities",
       "price": 320,
       "location": "Phoenix",
-      "availableDates": ["2025-03-18", "2025-03-19", "2025-03-20"],
+      "availableDates": [
+        "2025-03-18",
+        "2025-03-19",
+        "2025-03-20"
+      ],
       "bookings": []
     },
     {
@@ -46,7 +59,11 @@
       "description": "Peaceful lakefront property with water activities",
       "price": 175,
       "location": "Lake Tahoe",
-      "availableDates": ["2025-03-22", "2025-03-23", "2025-03-24"],
+      "availableDates": [
+        "2025-03-22",
+        "2025-03-23",
+        "2025-03-24"
+      ],
       "bookings": []
     },
     {
@@ -55,7 +72,11 @@
       "description": "Boutique hotel in a restored historic building",
       "price": 190,
       "location": "Charleston",
-      "availableDates": ["2025-03-25", "2025-03-26", "2025-03-27"],
+      "availableDates": [
+        "2025-03-25",
+        "2025-03-26",
+        "2025-03-27"
+      ],
       "bookings": []
     },
     {
@@ -64,7 +85,11 @@
       "description": "Oceanfront resort with private beach access",
       "price": 450,
       "location": "Maui",
-      "availableDates": ["2025-03-28", "2025-03-29", "2025-03-30"],
+      "availableDates": [
+        "2025-03-28",
+        "2025-03-29",
+        "2025-03-30"
+      ],
       "bookings": []
     },
     {
@@ -73,7 +98,11 @@
       "description": "Ski-in/ski-out lodge with mountain views",
       "price": 280,
       "location": "Vail",
-      "availableDates": ["2025-04-01", "2025-04-02", "2025-04-03"],
+      "availableDates": [
+        "2025-04-01",
+        "2025-04-02",
+        "2025-04-03"
+      ],
       "bookings": []
     },
     {
@@ -82,7 +111,11 @@
       "description": "High-rise hotel with skyline views",
       "price": 220,
       "location": "Chicago",
-      "availableDates": ["2025-04-04", "2025-04-05", "2025-04-06"],
+      "availableDates": [
+        "2025-04-04",
+        "2025-04-05",
+        "2025-04-06"
+      ],
       "bookings": []
     },
     {
@@ -91,7 +124,11 @@
       "description": "Luxury hotel surrounded by wine country",
       "price": 400,
       "location": "Napa Valley",
-      "availableDates": ["2025-04-07", "2025-04-08", "2025-04-09"],
+      "availableDates": [
+        "2025-04-07",
+        "2025-04-08",
+        "2025-04-09"
+      ],
       "bookings": []
     },
     {
@@ -100,7 +137,11 @@
       "description": "Historic hotel with traditional charm",
       "price": 240,
       "location": "New Orleans",
-      "availableDates": ["2025-04-10", "2025-04-11", "2025-04-12"],
+      "availableDates": [
+        "2025-04-10",
+        "2025-04-11",
+        "2025-04-12"
+      ],
       "bookings": []
     },
     {
@@ -109,7 +150,11 @@
       "description": "Tropical paradise with private lagoon",
       "price": 520,
       "location": "Bora Bora",
-      "availableDates": ["2025-04-13", "2025-04-14", "2025-04-15"],
+      "availableDates": [
+        "2025-04-13",
+        "2025-04-14",
+        "2025-04-15"
+      ],
       "bookings": []
     },
     {
@@ -118,7 +163,11 @@
       "description": "All-suite hotel with business amenities",
       "price": 260,
       "location": "Boston",
-      "availableDates": ["2025-04-16", "2025-04-17", "2025-04-18"],
+      "availableDates": [
+        "2025-04-16",
+        "2025-04-17",
+        "2025-04-18"
+      ],
       "bookings": []
     },
     {
@@ -127,7 +176,11 @@
       "description": "Western-style resort with horseback riding",
       "price": 195,
       "location": "Montana",
-      "availableDates": ["2025-04-19", "2025-04-20", "2025-04-21"],
+      "availableDates": [
+        "2025-04-19",
+        "2025-04-20",
+        "2025-04-21"
+      ],
       "bookings": []
     },
     {
@@ -136,7 +189,11 @@
       "description": "Relaxed beachside hotel with water sports",
       "price": 230,
       "location": "San Diego",
-      "availableDates": ["2025-04-22", "2025-04-23", "2025-04-24"],
+      "availableDates": [
+        "2025-04-22",
+        "2025-04-23",
+        "2025-04-24"
+      ],
       "bookings": []
     },
     {
@@ -145,7 +202,11 @@
       "description": "Boutique hotel with landscaped gardens",
       "price": 180,
       "location": "Portland",
-      "availableDates": ["2025-04-25", "2025-04-26", "2025-04-27"],
+      "availableDates": [
+        "2025-04-25",
+        "2025-04-26",
+        "2025-04-27"
+      ],
       "bookings": []
     },
     {
@@ -154,7 +215,11 @@
       "description": "Luxury island resort with private villas",
       "price": 600,
       "location": "Maldives",
-      "availableDates": ["2025-04-28", "2025-04-29", "2025-04-30"],
+      "availableDates": [
+        "2025-04-28",
+        "2025-04-29",
+        "2025-04-30"
+      ],
       "bookings": []
     },
     {
@@ -163,7 +228,11 @@
       "description": "Mountain resort with hot springs",
       "price": 340,
       "location": "Swiss Alps",
-      "availableDates": ["2025-05-01", "2025-05-02", "2025-05-03"],
+      "availableDates": [
+        "2025-05-01",
+        "2025-05-02",
+        "2025-05-03"
+      ],
       "bookings": []
     },
     {
@@ -172,7 +241,11 @@
       "description": "Waterfront hotel with marina access",
       "price": 290,
       "location": "Seattle",
-      "availableDates": ["2025-05-04", "2025-05-05", "2025-05-06"],
+      "availableDates": [
+        "2025-05-04",
+        "2025-05-05",
+        "2025-05-06"
+      ],
       "bookings": []
     },
     {
@@ -181,7 +254,11 @@
       "description": "Luxury desert resort with golf course",
       "price": 420,
       "location": "Dubai",
-      "availableDates": ["2025-05-07", "2025-05-08", "2025-05-09"],
+      "availableDates": [
+        "2025-05-07",
+        "2025-05-08",
+        "2025-05-09"
+      ],
       "bookings": []
     }
   ]

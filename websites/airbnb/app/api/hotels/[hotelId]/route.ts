@@ -2,16 +2,16 @@ import { NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
 
-export async function GET(
-  request: Request,
-  { params }: { params: { hotelId: string } }
-) {
+export async function GET(request: Request) {
   try {
+    // Get hotelId from URL
+    const hotelId = request.url.split('/').pop();
+    
     const filePath = path.join(process.cwd(), 'data', 'hotels.json');
     const fileContents = fs.readFileSync(filePath, 'utf8');
     const data = JSON.parse(fileContents);
 
-    const hotel = data.hotels.find((h: any) => h.id === params.hotelId);
+    const hotel = data.hotels.find((h: any) => h.id === hotelId);
     
     if (!hotel) {
       return NextResponse.json({ error: 'Hotel not found' }, { status: 404 });

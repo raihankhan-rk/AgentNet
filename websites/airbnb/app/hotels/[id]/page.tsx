@@ -8,8 +8,8 @@ async function getHotel(id: string) {
   return res.json();
 }
 
-export default async function HotelPage({ params }: { params: { id: string } }) {
-  const hotel = await getHotel(params.id);
+export default async function HotelPage(request: any) {
+  const hotel = await getHotel(request.params.id);
 
   return (
     <div className="container mx-auto px-4 py-8">
