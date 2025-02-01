@@ -8,6 +8,7 @@ import * as dotenv from "dotenv";
 import * as fs from "fs";
 import { createFlightSearchTool, createGetBookingsTool, createBookFlightTool } from "./tools";
 import * as readline from "readline";
+import { FLIGHTY_SYSTEM_PROMPT } from "./prompts";
 
 dotenv.config();
 
@@ -56,8 +57,7 @@ async function initializeAgent() {
     llm,
     tools,
     checkpointSaver: memory,
-    messageModifier:
-      "You are a helpful travel agent that can search for flights and help users book their travel. You can search for flights between cities on specific dates.",
+    messageModifier: FLIGHTY_SYSTEM_PROMPT,
   });
 
   return { agent, config: agentConfig };
@@ -84,7 +84,7 @@ async function runChatMode(agent: any, config: any) {
       }
 
       const stream = await agent.stream(
-        { messages: [new HumanMessage(userInput)] },
+        { messages: [new HumanMessage(userInput + "\nFor context, today's date is: " + new Date().toISOString().split('T')[0])] },
         config
       );
 

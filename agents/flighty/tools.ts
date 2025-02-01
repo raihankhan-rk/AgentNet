@@ -2,21 +2,21 @@ import { DynamicStructuredTool } from "@langchain/core/tools";
 import z from "zod";
 import { Flight, Ticket } from "../../websites/flighty/types/flight";
 
-/**
- * Creates a tool to search for flights using the Flighty API
- */
+
+ // Tool to search for flights using the Flighty API
+ 
 export function createFlightSearchTool() {
   return new DynamicStructuredTool({
-    name: "search_flights",
+    name: "search_flights", 
     description: "Search for available flights with optional filters for departure location, arrival location, and date",
     schema: z.object({
       from: z.string().optional().describe("Optional departure city"),
-      to: z.string().optional().describe("Optional arrival city"),
+      to: z.string().optional().describe("Optional arrival city"), 
       date: z.string().optional().describe("Optional travel date in YYYY-MM-DD format"),
     }),
     func: async ({ from, to, date }) => {
       try {
-        console.log("Searching flights with filters:", { from, to, date });
+        console.log(`invoking \`search_flights\` with filters: from=${from}, to=${to}, date=${date}`);
         const params = new URLSearchParams();
         if (from) params.append("from", encodeURIComponent(from));
         if (to) params.append("to", encodeURIComponent(to));
@@ -39,9 +39,9 @@ export function createFlightSearchTool() {
   });
 }
 
-/**
- * Creates a tool to retrieve all bookings
- */
+
+// Tool to retrieve all bookings
+
 export function createGetBookingsTool() {
   return new DynamicStructuredTool({
     name: "get_bookings",
@@ -49,7 +49,7 @@ export function createGetBookingsTool() {
     schema: z.object({}), // No parameters needed
     func: async () => {
       try {
-        console.log("Retrieving all bookings");
+        console.log(`invoking \`get_bookings\``);
         const response = await fetch("https://web4-flighty.vercel.app/api/bookings");
         
         if (!response.ok) {
@@ -65,9 +65,8 @@ export function createGetBookingsTool() {
   });
 }
 
-/**
- * Creates a tool to create a new booking
- */
+// Tool to create a new booking
+
 export function createBookFlightTool() {
   return new DynamicStructuredTool({
     name: "book_flight",
@@ -78,7 +77,7 @@ export function createBookFlightTool() {
     }),
     func: async ({ flightId, travellerName }) => {
       try {
-        console.log("Creating booking for flight", flightId, "traveller:", travellerName);
+        console.log(`invoking \`book_flight\` with flightId=${flightId}, travellerName=${travellerName}`);
         const response = await fetch("https://web4-flighty.vercel.app/api/bookings", {
           method: "POST",
           headers: {
