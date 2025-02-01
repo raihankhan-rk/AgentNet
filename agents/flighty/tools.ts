@@ -3,7 +3,7 @@ import z from "zod";
 import { Flight, Ticket } from "../../websites/flighty/types/flight";
 
 
- // Tool to search for flights using the Flighty API
+ // Tool to search for flights
  
 export function createFlightSearchTool() {
   return new DynamicStructuredTool({
