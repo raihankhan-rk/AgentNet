@@ -7,7 +7,16 @@
       "price": 200,
       "location": "Miami Beach",
       "availableDates": [],
-      "bookings": []
+      "bookings": [
+        {
+          "id": "042d7ae4-f1d8-4a07-8719-73dd12054047",
+          "userId": "user123",
+          "checkIn": "2025-02-20",
+          "checkOut": "2025-02-21",
+          "guests": 1,
+          "totalPrice": 200
+        }
+      ]
     },
     {
       "id": "2",

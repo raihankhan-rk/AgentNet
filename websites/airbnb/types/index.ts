@@ -16,6 +16,11 @@ export interface Hotel {
   maxOccupants: number;
   images: string[];
   description: string;
+  availableDates: string[];
+  bookings: Booking[];
+  matchesExactDates?: boolean;
+  nearbyDates?: string[];
+  isNearDesiredDates?: boolean;
 }
 
 export interface SearchParams {
