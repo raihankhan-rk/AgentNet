@@ -1,0 +1,20 @@
+{
+  "name": "flighty",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "typescript": "^5.7.3"
+  },
+  "dependencies": {
+    "@coinbase/cdp-langchain": "^0.0.15",
+    "@langchain/langgraph": "^0.2.44",
+    "@langchain/openai": "^0.4.2"
+  }
+}
