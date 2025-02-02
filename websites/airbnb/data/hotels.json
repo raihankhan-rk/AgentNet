@@ -279,6 +279,14 @@
           "checkOut": "2025-02-06",
           "guests": 1,
           "totalPrice": 1380
+        },
+        {
+          "id": "feb95b95-39db-45ae-9095-58d3ad859c99",
+          "userId": "user123",
+          "checkIn": "2025-02-19",
+          "checkOut": "2025-02-21",
+          "guests": 1,
+          "totalPrice": 1380
         }
       ]
     },
