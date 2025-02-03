@@ -1,5 +1,5 @@
-import express from 'express'
 import bodyParser from 'body-parser';
+import express from 'express';
 
 const app = express();
 app.use(bodyParser.json());
@@ -10,15 +10,24 @@ app.post('/register', (req, res) => {
   const { peerId, name, description, capabilities  } = req.body;
   if (!peerId) return res.status(400).send('Missing peerId');
   agentsRegistry[peerId] = { name, description, capabilities };
-  console.log(`Registered agent: ${peerId} with capabilities: ${capabilities}`);
+  console.log('Registered agent:', { peerId, name, capabilities });
+  console.log('Current registry:', agentsRegistry);
   res.status(200).send({ message: 'Registered successfully' });
 });
 
 app.get('/lookup', (req, res) => {
-  const capability = req.query.capabilities;
-  const result = Object.values(agentsRegistry).filter(agent =>
-    agent.capabilities.includes(capability)
-  );
+  const capability = req.query.capability;
+  console.log('Looking up capability:', capability);
+  console.log('Current registry:', agentsRegistry);
+  
+  const result = Object.entries(agentsRegistry)
+    .filter(([peerId, agent]) => agent.capabilities.includes(capability))
+    .map(([peerId, agent]) => ({
+      ...agent,
+      peerId
+    }));
+  
+  console.log('Lookup result:', result);
   res.status(200).json(result);
 });
 

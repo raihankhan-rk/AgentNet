@@ -1,8 +1,8 @@
+import dotenv from "dotenv";
+import * as readline from "readline";
 import AgentNetworkProtocol from "../agent-network-protocol/index.js";
 import { FlightyAgent } from "./flighty/agent.js";
 import { OrchestratorAgent } from "./orchestrator/agent.js";
-import dotenv from "dotenv";
-import * as readline from "readline";
 
 dotenv.config();
 
@@ -19,6 +19,7 @@ async function main() {
             model: "gpt-4o-mini",
         };
 
+        console.log('Initializing Flighty Agent...');
         const flightyAgent = new FlightyAgent(flightyConfig);
         await flightyAgent.initialize();
 
@@ -28,7 +29,12 @@ async function main() {
             capabilities: ["flight-booking"],
         };
 
-        await protocol.deployAgent(flightyAgent, flightyMetadata);
+        console.log('Deploying Flighty Agent...');
+        const flightyDeployment = await protocol.deployAgent(flightyAgent, flightyMetadata);
+        console.log('Flighty Agent deployed with peerId:', flightyDeployment.peerId);
+
+        // Add delay before deploying Orchestrator
+        await new Promise(resolve => setTimeout(resolve, 2000));
 
         // Deploy Orchestrator Agent
         const orchestratorConfig = {

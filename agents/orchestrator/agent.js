@@ -1,14 +1,14 @@
-import { ChatOpenAI } from "@langchain/openai";
+import { HumanMessage } from "@langchain/core/messages";
 import { MemorySaver } from "@langchain/langgraph";
 import { createReactAgent } from "@langchain/langgraph/prebuilt";
-import { HumanMessage } from "@langchain/core/messages";
+import { ChatOpenAI } from "@langchain/openai";
 import { createAgentCommunicationTool, createAgentDiscoveryTool } from "./tools.js";
 
 const DEFAULT_SYSTEM_PROMPT =
     `You are an orchestrator agent that helps users with various tasks. 
 When a user mentions anything related to flights or travel, you should:
-1. First use the discover_agents tool to find available agents with flight-booking capability
-2. Use the communicate_with_agent tool to send specific requests to the flight booking agent
+1. First use the discover_agents tool to find available agents with the capability "flight-booking" (use exactly this string)
+2. Use the communicate_with_agent tool to send specific requests to the flight booking agent, always using "flight-booking" as the capability
 3. Process their responses and either:
    - Return results to the user
    - Ask for more information if needed

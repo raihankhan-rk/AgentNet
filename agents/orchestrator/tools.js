@@ -2,31 +2,32 @@ import { DynamicStructuredTool } from "@langchain/core/tools";
 import z from "zod";
 
 export function createAgentCommunicationTool(protocol) {
+  let cachedAgents = null;  // Cache for the current request
+
   return new DynamicStructuredTool({
     name: "communicate_with_agent",
-    description: "Find and communicate with agents based on their capabilities",
+    description: "Communicate with another agent based on capability",
     schema: z.object({
-      capability: z.string().describe("The capability to search for (e.g., 'flight-booking')"),
-      message: z.string().describe("The message to send to the agent"),
-      requireResponse: z.boolean().optional().describe("Whether to wait for a response"),
-      metadata: z.record(z.any()).optional().describe("Additional metadata to send with the message")
+      capability: z.string().describe("The capability to search for"),
+      message: z.string().describe("The message to send"),
+      requireResponse: z.boolean().optional().describe("Whether to wait for response"),
+      metadata: z.record(z.any()).optional().describe("Additional metadata"),
     }),
     func: async ({ capability, message, requireResponse = true, metadata = {} }) => {
       try {
-        const agents = await protocol.findAgentsByCapability(capability);
+        // Use cached agents if available, otherwise search
+        if (!cachedAgents) {
+          cachedAgents = await protocol.findAgentsByCapability(capability.trim().toLowerCase());
+        }
         
-        if (agents.length === 0) {
+        if (cachedAgents.length === 0) {
           return JSON.stringify({
             type: 'error',
             content: `No agents found with capability: ${capability}`
           });
         }
 
-        // For now, use the first agent found
-        // Could be extended to implement more sophisticated agent selection
-        const targetAgent = agents[0];
-
-        // Prepare the message
+        const targetAgent = cachedAgents[0];
         const messageData = {
           type: 'request',
           content: message,
@@ -35,28 +36,25 @@ export function createAgentCommunicationTool(protocol) {
         };
 
         if (requireResponse) {
-          // Create a promise that will be resolved when the response is received
-          const response = await new Promise((resolve) => {
-            // Store the resolve function to be called when response is received
-            protocol.pendingResponses.set(targetAgent.peerId, resolve);
-            
-            // Send the message
-            protocol.sendMessage(targetAgent.peerId, messageData);
-          });
-
+          const response = await protocol.sendMessage(targetAgent.peerId, messageData);
+          // Clear cache after successful communication
+          cachedAgents = null;
           return JSON.stringify(response);
         } else {
-          // Fire and forget
           await protocol.sendMessage(targetAgent.peerId, messageData);
+          // Clear cache after successful communication
+          cachedAgents = null;
           return JSON.stringify({
             type: 'response',
             content: 'Message sent successfully'
           });
         }
       } catch (error) {
+        // Clear cache on error
+        cachedAgents = null;
         return JSON.stringify({
           type: 'error',
-          content: `Error communicating with agent: ${error instanceof Error ? error.message : 'Unknown error'}`
+          content: `Communication failed: ${error.message}`
         });
       }
     },
@@ -68,12 +66,12 @@ export function createAgentDiscoveryTool(protocol) {
     name: "discover_agents",
     description: "Search for agents with specific capabilities",
     schema: z.object({
-      capability: z.string().describe("The capability to search for"),
+      capability: z.string().describe("The capability to search for (use 'flight-booking' for flight related tasks)"),
       includeMetadata: z.boolean().optional().describe("Whether to include full agent metadata")
     }),
     func: async ({ capability, includeMetadata = false }) => {
       try {
-        const agents = await protocol.findAgentsByCapability(capability);
+        const agents = await protocol.findAgentsByCapability(capability.trim().toLowerCase());
         
         if (includeMetadata) {
           return JSON.stringify(agents, null, 2);

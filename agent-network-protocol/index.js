@@ -1,62 +1,79 @@
-import { createLibp2p } from "libp2p";
-import { tcp } from "@libp2p/tcp";
-import { yamux } from "@chainsafe/libp2p-yamux";
-import { noise } from "@libp2p/noise";
 import { gossipsub } from "@chainsafe/libp2p-gossipsub";
+import { yamux } from "@chainsafe/libp2p-yamux";
 import { identify } from '@libp2p/identify';
 import { kadDHT } from '@libp2p/kad-dht';
-import PeerId from 'peer-id';
+import { noise } from "@libp2p/noise";
+import { tcp } from "@libp2p/tcp";
 import axios from "axios";
+import { createLibp2p } from "libp2p";
 
-class AgentNetworkProtocol {
-    constructor(registrarUrl = 'http://localhost:3000') {
-        this.node = null;
-        this.registrarUrl = registrarUrl;
+export default class AgentNetworkProtocol {
+    constructor() {
+        this.registrarUrl = 'http://localhost:3000';
         this.messageHandlers = new Map();
+        this.pendingResponses = new Map();
+        this.nodes = new Map(); // Store multiple nodes
     }
 
     async initialize() {
-        const peerId = await PeerId.create({ keyType: 'Ed25519' });
-        
-        const libp2pConfig = {
-            peerId,
+        this.baseConfig = {
             addresses: {
-                listen: ['/ip4/0.0.0.0/tcp/0']
+                listen: ['/ip4/127.0.0.1/tcp/0']
             },
             transports: [tcp()],
-            streamMuxers: [yamux()],
             connectionEncryption: [noise()],
+            streamMuxers: [yamux()],
             services: {
+                identify: identify(),
                 pubsub: gossipsub({
-                    enabled: true,
-                    emitSelf: false,
+                    emitSelf: true,
                     allowPublishToZeroPeers: true,
-                    globalSignaturePolicy: "StrictSign"
+                    gossipIncoming: true,
+                    fallbackToFloodsub: true,
+                    floodPublish: true,
                 }),
                 dht: kadDHT({
-                    protocol: '/agent-dht/1.0.0',
                     clientMode: false,
-                }),
-                identify: identify()
+                    pingTimeout: 5000,
+                    maxInboundStreams: 5000,
+                    maxOutboundStreams: 5000,
+                })
+            }
+        };
+    }
+
+    async createNode() {
+        const port = Math.floor(Math.random() * (65535 - 1024) + 1024);
+        
+        const nodeConfig = {
+            ...this.baseConfig,
+            addresses: {
+                listen: [`/ip4/127.0.0.1/tcp/${port}`]
             }
         };
 
-        this.node = await createLibp2p(libp2pConfig);
+        const node = await createLibp2p(nodeConfig);
+        await node.start();
+
+        // Wait for node to be ready
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        // Subscribe to messages for this node
+        const topic = `/agent/${node.peerId.toString()}`;
+        await node.services.pubsub.subscribe(topic);
         
-        // Start the node before setting up pubsub
-        await this.node.start();
-        
-        // Setup message handling after node is started
-        await this.node.services.pubsub.subscribe('agent-messages');
-        this.node.services.pubsub.addEventListener('message', (message) => {
-            this.handleIncomingMessage(message);
+        // Set up message handler
+        node.services.pubsub.addEventListener('message', (evt) => {
+            if (evt.detail.topic === topic) {
+                this.handleIncomingMessage(evt.detail);
+            }
         });
 
-        return this.node;
+        return node;
     }
 
     async deployAgent(agentInstance, agentMetadata) {
-        if (!this.node) {
+        if (!this.baseConfig) {
             throw new Error('Protocol not initialized. Call initialize() first.');
         }
 
@@ -66,50 +83,154 @@ class AgentNetworkProtocol {
             throw new Error('Missing required agent metadata');
         }
 
+        // Create a new node for this agent
+        const node = await this.createNode();
+        const peerId = node.peerId.toString();
+        
+        // Store the node
+        this.nodes.set(peerId, node);
+
         // Register message handler for this agent
-        this.messageHandlers.set(this.node.peerId.toString(), async (message) => {
-            return await agentInstance.handleMessage(message);
+        this.messageHandlers.set(peerId, async (message) => {
+            const response = await agentInstance.handleMessage(message);
+            return response;
         });
 
         // Register the agent with the network
-        await this._registerAgent({
-            peerId: this.node.peerId.toString(),
-            name,
-            description,
-            capabilities
-        });
+        try {
+            await this._registerAgent({
+                peerId,
+                name,
+                description,
+                capabilities
+            });
+            console.log('Successfully registered agent:', name, 'with peerId:', peerId);
+            
+            // Wait a moment before connecting nodes
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            // Connect this node to other nodes
+            await this.connectNodes();
+            
+        } catch (error) {
+            // Clean up on failure
+            await node.stop();
+            this.nodes.delete(peerId);
+            this.messageHandlers.delete(peerId);
+            throw error;
+        }
 
         return {
-            peerId: this.node.peerId.toString(),
+            peerId,
             agentMetadata
         };
     }
 
     async findAgentsByCapability(capability) {
         try {
+            console.log('Protocol searching for capability:', capability);
             const response = await axios.get(
                 `${this.registrarUrl}/lookup?capability=${capability}`
             );
+            console.log('Protocol received response:', response.data);
             return response.data;
         } catch (error) {
+            console.error('Protocol error finding agents:', error);
             throw new Error(`Failed to find agents: ${error.message}`);
         }
     }
 
     async sendMessage(targetPeerId, message) {
+        console.log('\n=== Sending Message ===');
+        console.log('Target PeerId:', targetPeerId);
+        console.log('Message:', message);
+
+        const nodes = Array.from(this.nodes.values());
+        if (nodes.length === 0) {
+            throw new Error('No nodes available to send message');
+        }
+
+        let senderNode = this.nodes.get(targetPeerId);
+        if (!senderNode) {
+            console.log('Using fallback sender node');
+            senderNode = nodes[0];
+        }
+
         try {
-            const messageData = {
-                from: this.node.peerId.toString(),
+            const topic = `/agent/${targetPeerId}`;
+            console.log('Publishing to topic:', topic);
+            
+            // Increased timeout to 30 seconds for debugging
+            const responsePromise = new Promise((resolve, reject) => {
+                const timeoutId = setTimeout(() => {
+                    this.pendingResponses.delete(senderNode.peerId.toString());
+                    reject(new Error(`Response timeout waiting for agent ${targetPeerId}. The agent may be busy or not responding.`));
+                }, 30000); // 30 second timeout for debugging
+
+                console.log('Setting up response handler for:', senderNode.peerId.toString());
+                this.pendingResponses.set(senderNode.peerId.toString(), (response) => {
+                    console.log('Received response:', response);
+                    clearTimeout(timeoutId);
+                    resolve(response);
+                });
+            });
+
+            // Ensure subscription with retry
+            let subscribed = false;
+            for (let i = 0; i < 3 && !subscribed; i++) {
+                try {
+                    if (!senderNode.services.pubsub.getTopics().includes(topic)) {
+                        await senderNode.services.pubsub.subscribe(topic);
+                    }
+                    subscribed = true;
+                } catch (error) {
+                    console.warn(`Subscription attempt ${i + 1} failed:`, error);
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                }
+            }
+
+            if (!subscribed) {
+                throw new Error('Failed to subscribe to topic after multiple attempts');
+            }
+
+            // Ensure peer connection
+            const peers = await senderNode.services.pubsub.getPeers(topic);
+            if (peers.length === 0) {
+                await this.connectNodes();
+            }
+
+            const messageData = JSON.stringify({
                 to: targetPeerId,
+                from: senderNode.peerId.toString(),
                 content: message,
                 timestamp: Date.now()
-            };
+            });
 
-            await this.node.services.pubsub.publish(
-                'agent-messages',
-                new TextEncoder().encode(JSON.stringify(messageData))
-            );
+            // Publish with retry
+            let published = false;
+            for (let i = 0; i < 3 && !published; i++) {
+                try {
+                    await senderNode.services.pubsub.publish(
+                        topic,
+                        new TextEncoder().encode(messageData)
+                    );
+                    published = true;
+                    console.log(`Message sent to ${targetPeerId} on topic ${topic}`);
+                } catch (error) {
+                    console.warn(`Publish attempt ${i + 1} failed:`, error);
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                }
+            }
+
+            if (!published) {
+                throw new Error('Failed to publish message after multiple attempts');
+            }
+
+            console.log('Waiting for response...');
+            return await responsePromise;
+
         } catch (error) {
+            console.error('Error sending message:', error);
             throw new Error(`Failed to send message: ${error.message}`);
         }
     }
@@ -117,17 +238,63 @@ class AgentNetworkProtocol {
     async handleIncomingMessage(message) {
         try {
             const data = JSON.parse(new TextDecoder().decode(message.data));
+            console.log('\n=== Incoming Message ===');
+            console.log('Message data:', data);
+            console.log('Registered handlers:', Array.from(this.messageHandlers.keys()));
+            console.log('Pending responses:', Array.from(this.pendingResponses.keys()));
             
-            // Check if message is for this peer
-            if (data.to === this.node.peerId.toString()) {
-                const handler = this.messageHandlers.get(data.to);
-                if (handler) {
-                    const response = await handler(data.content);
-                    if (response) {
-                        // Send response back
-                        await this.sendMessage(data.from, response);
-                    }
+            // Fast-path for responses
+            if (data.isResponse) {
+                console.log('Processing response message');
+                const resolver = this.pendingResponses.get(data.to);
+                if (resolver) {
+                    console.log('Found resolver for response');
+                    resolver(data.content);
+                    this.pendingResponses.delete(data.to);
+                } else {
+                    console.log('No resolver found for response');
                 }
+                return;
+            }
+            
+            // Handle new requests
+            console.log('Processing new request');
+            const handler = this.messageHandlers.get(data.to);
+            if (handler) {
+                console.log('Found message handler, invoking...');
+                try {
+                    const response = await handler(data.content);
+                    console.log('Handler response:', response);
+                    if (!response) {
+                        console.log('No response from handler');
+                        return;
+                    }
+
+                    const receivingNode = this.nodes.get(data.to);
+                    if (!receivingNode) {
+                        console.log('No receiving node found');
+                        return;
+                    }
+
+                    const responseData = JSON.stringify({
+                        to: data.from,
+                        from: data.to,
+                        content: response,
+                        timestamp: Date.now(),
+                        isResponse: true
+                    });
+
+                    console.log('Sending response:', responseData);
+                    await receivingNode.services.pubsub.publish(
+                        `/agent/${data.from}`,
+                        new TextEncoder().encode(responseData)
+                    );
+                    console.log('Response sent successfully');
+                } catch (error) {
+                    console.error('Error processing message:', error);
+                }
+            } else {
+                console.log('No handler found for message');
             }
         } catch (error) {
             console.error('Error handling message:', error);
@@ -147,10 +314,49 @@ class AgentNetworkProtocol {
     }
 
     async stop() {
-        if (this.node && this.node.isStarted()) {
-            await this.node.stop();
+        // Stop all nodes
+        for (const [peerId, node] of this.nodes) {
+            await node.stop();
+            this.nodes.delete(peerId);
+            this.messageHandlers.delete(peerId);
+        }
+    }
+
+    // Add this new method to establish connections between nodes
+    async connectNodes() {
+        const connectedPeers = new Set();
+        
+        for (const [peerId, node] of this.nodes) {
+            for (const [otherPeerId, otherNode] of this.nodes) {
+                if (peerId !== otherPeerId && !connectedPeers.has(`${peerId}-${otherPeerId}`)) {
+                    try {
+                        // Subscribe to each other's topics before attempting connection
+                        const topic = `/agent/${otherPeerId}`;
+                        await node.services.pubsub.subscribe(topic);
+                        
+                        // Attempt to connect with retry
+                        let connected = false;
+                        let attempts = 0;
+                        while (!connected && attempts < 3) {
+                            try {
+                                await node.dial(otherNode.peerId);
+                                connected = true;
+                                console.log(`Successfully connected ${peerId} to ${otherPeerId}`);
+                            } catch (error) {
+                                attempts++;
+                                await new Promise(resolve => setTimeout(resolve, 1000));
+                            }
+                        }
+                        
+                        // Mark this pair as connected
+                        connectedPeers.add(`${peerId}-${otherPeerId}`);
+                        connectedPeers.add(`${otherPeerId}-${peerId}`);
+                        
+                    } catch (error) {
+                        console.error(`Failed to connect ${peerId} to ${otherPeerId}:`, error.message);
+                    }
+                }
+            }
         }
     }
 }
-
-export default AgentNetworkProtocol;
