@@ -1,4 +1,3 @@
-// protocol.js
 import { createLibp2p } from "libp2p";
 import { tcp } from "@libp2p/tcp";
 import { yamux } from "@chainsafe/libp2p-yamux";
@@ -17,7 +16,7 @@ class AgentNetworkProtocol {
     }
 
     async initialize() {
-        const peerId = await PeerId.create({ keyType: 'Ed25519' });;
+        const peerId = await PeerId.create({ keyType: 'Ed25519' });
         
         const libp2pConfig = {
             peerId,
@@ -31,6 +30,8 @@ class AgentNetworkProtocol {
                 pubsub: gossipsub({
                     enabled: true,
                     emitSelf: false,
+                    allowPublishToZeroPeers: true,
+                    globalSignaturePolicy: "StrictSign"
                 }),
                 dht: kadDHT({
                     protocol: '/agent-dht/1.0.0',
@@ -42,9 +43,12 @@ class AgentNetworkProtocol {
 
         this.node = await createLibp2p(libp2pConfig);
         
-        // Setup message handling
-        this.node.pubsub.subscribe('agent-messages');
-        this.node.pubsub.addEventListener('message', (message) => {
+        // Start the node before setting up pubsub
+        await this.node.start();
+        
+        // Setup message handling after node is started
+        await this.node.services.pubsub.subscribe('agent-messages');
+        this.node.services.pubsub.addEventListener('message', (message) => {
             this.handleIncomingMessage(message);
         });
 
@@ -75,11 +79,6 @@ class AgentNetworkProtocol {
             capabilities
         });
 
-        // Start the libp2p node if not already started
-        if (!this.node.isStarted()) {
-            await this.node.start();
-        }
-
         return {
             peerId: this.node.peerId.toString(),
             agentMetadata
@@ -106,7 +105,7 @@ class AgentNetworkProtocol {
                 timestamp: Date.now()
             };
 
-            await this.node.pubsub.publish(
+            await this.node.services.pubsub.publish(
                 'agent-messages',
                 new TextEncoder().encode(JSON.stringify(messageData))
             );

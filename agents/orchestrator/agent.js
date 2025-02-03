@@ -1,8 +1,8 @@
-const { ChatOpenAI } = require("@langchain/openai");
-const { MemorySaver } = require("@langchain/langgraph");
-const { createReactAgent } = require("@langchain/langgraph/prebuilt");
-const { HumanMessage } = require("@langchain/core/messages");
-const { createAgentCommunicationTool, createAgentDiscoveryTool } = require("./tools.js");
+import { ChatOpenAI } from "@langchain/openai";
+import { MemorySaver } from "@langchain/langgraph";
+import { createReactAgent } from "@langchain/langgraph/prebuilt";
+import { HumanMessage } from "@langchain/core/messages";
+import { createAgentCommunicationTool, createAgentDiscoveryTool } from "./tools.js";
 
 const DEFAULT_SYSTEM_PROMPT =
     `You are an orchestrator agent that helps users with various tasks. 

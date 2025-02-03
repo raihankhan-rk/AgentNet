@@ -1,7 +1,6 @@
-const { DynamicStructuredTool } = require("@langchain/core/tools");
-const z = require("zod");
+import { DynamicStructuredTool } from "@langchain/core/tools";
+import { z } from "zod";
 
-// Tool to search for flights
 export function createFlightSearchTool() {
   return new DynamicStructuredTool({
     name: "search_flights",

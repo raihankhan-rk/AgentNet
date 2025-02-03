@@ -1,7 +1,7 @@
-const { DynamicStructuredTool } = require("@langchain/core/tools");
-const z = require("zod");
+import { DynamicStructuredTool } from "@langchain/core/tools";
+import z from "zod";
 
-function createAgentCommunicationTool(protocol) {
+export function createAgentCommunicationTool(protocol) {
   return new DynamicStructuredTool({
     name: "communicate_with_agent",
     description: "Find and communicate with agents based on their capabilities",
@@ -63,7 +63,7 @@ function createAgentCommunicationTool(protocol) {
   });
 }
 
-function createAgentDiscoveryTool(protocol) {
+export function createAgentDiscoveryTool(protocol) {
   return new DynamicStructuredTool({
     name: "discover_agents",
     description: "Search for agents with specific capabilities",
@@ -96,8 +96,3 @@ function createAgentDiscoveryTool(protocol) {
     },
   });
 }
-
-module.exports = {
-  createAgentCommunicationTool,
-  createAgentDiscoveryTool
-};

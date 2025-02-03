@@ -1,13 +1,13 @@
-const { CdpAgentkit } = require("@coinbase/cdp-agentkit-core");
-const { CdpToolkit } = require("@coinbase/cdp-langchain");
-const { MemorySaver } = require("@langchain/langgraph");
-const { createReactAgent } = require("@langchain/langgraph/prebuilt");
-const { ChatOpenAI } = require("@langchain/openai");
-const { HumanMessage } = require("@langchain/core/messages");
-const { createFlightSearchTool, createGetBookingsTool, createBookFlightTool } = require("./tools.js");
-const { FLIGHTY_SYSTEM_PROMPT } = require("./prompts.js");
+import { CdpAgentkit } from "@coinbase/cdp-agentkit-core";
+import { CdpToolkit } from "@coinbase/cdp-langchain";
+import { MemorySaver } from "@langchain/langgraph";
+import { createReactAgent } from "@langchain/langgraph/prebuilt";
+import { ChatOpenAI } from "@langchain/openai";
+import { HumanMessage } from "@langchain/core/messages";
+import { createFlightSearchTool, createGetBookingsTool, createBookFlightTool } from "./tools.js";
+import { FLIGHTY_SYSTEM_PROMPT } from "./prompts.js";
 
-class FlightyAgent {
+export class FlightyAgent {
     constructor(agentConfig) {
         this.agentConfig = agentConfig;
         this.agent = null;
@@ -89,5 +89,3 @@ class FlightyAgent {
         return this.config;
     }
 }
-
-module.exports = { FlightyAgent };
