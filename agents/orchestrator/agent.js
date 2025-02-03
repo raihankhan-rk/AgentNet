@@ -1,10 +1,10 @@
 import { CdpAgentkit } from "@coinbase/cdp-agentkit-core";
+import { HumanMessage } from "@langchain/core/messages";
 import { MemorySaver } from "@langchain/langgraph";
 import { createReactAgent } from "@langchain/langgraph/prebuilt";
 import { ChatOpenAI } from "@langchain/openai";
-import { HumanMessage } from "@langchain/core/messages";
-import { createAgentCommunicationTool, createAgentDiscoveryTool, createMultiAgentCommunicationTool } from "./tools.js";
 import { DEFAULT_SYSTEM_PROMPT } from "./prompts.js";
+import { createAgentCommunicationTool, createAgentDiscoveryTool, createMultiAgentCommunicationTool } from "./tools.js";
 
 export class OrchestratorAgent {
     constructor(config, protocol) {
@@ -12,7 +12,7 @@ export class OrchestratorAgent {
         this.protocol = protocol;
         this.agent = null;
         this.memory = new MemorySaver();
-        // Add default runnable config
+        this.ephemeralNode = null;
         this.runnableConfig = {
             configurable: {
                 thread_id: "Orchestrator_Agent",
@@ -49,9 +49,33 @@ export class OrchestratorAgent {
         });
     }
 
+    async createEphemeralNode() {
+        if (!this.ephemeralNode) {
+            console.log('\n[DEBUG] Creating new ephemeral orchestrator node...');
+            this.ephemeralNode = await this.protocol.createNode();
+            const peerId = this.ephemeralNode.peerId.toString();
+            this.protocol.nodes.set(peerId, this.ephemeralNode);
+            console.log(`[DEBUG] Ephemeral orchestrator node created with peerId: ${peerId}`);
+        }
+        return this.ephemeralNode;
+    }
+
+    async destroyEphemeralNode() {
+        if (this.ephemeralNode) {
+            const peerId = this.ephemeralNode.peerId.toString();
+            console.log('\n[DEBUG] Cleaning up ephemeral orchestrator node...');
+            this.protocol.nodes.delete(peerId);
+            await this.ephemeralNode.stop();
+            this.ephemeralNode = null;
+            console.log(`[DEBUG] Ephemeral orchestrator node ${peerId} destroyed`);
+        }
+    }
+
     async handleMessage(message) {
         try {
-            console.log('Orchestrator Agent handling message:', message);
+            await this.createEphemeralNode();
+            
+            console.log('\n[DEBUG] Orchestrator processing message:', message);
             const stream = await this.agent.stream(
                 { messages: [new HumanMessage(message)] },
                 this.runnableConfig
@@ -66,13 +90,15 @@ export class OrchestratorAgent {
                 }
             }
 
-            console.log('Orchestrator Agent response:', response);
+            console.log('[DEBUG] Orchestrator finished processing');
+            // Clear line and move cursor up for cleaner output
+            process.stdout.write('\x1b[2K\r');
             return {
                 type: "response",
                 content: response.trim(),
             };
         } catch (error) {
-            console.error('Orchestrator Agent error:', error);
+            console.error('\n[ERROR] Orchestrator Agent error:', error);
             return {
                 type: "error",
                 content: `Error processing request: ${
@@ -80,6 +106,10 @@ export class OrchestratorAgent {
                 }`,
             };
         }
+    }
+
+    async cleanup() {
+        await this.destroyEphemeralNode();
     }
 
     getAgent() {

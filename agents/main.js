@@ -1,8 +1,8 @@
 import dotenv from "dotenv";
 import * as readline from "readline";
 import AgentNetworkProtocol from "../agent-network-protocol/index.js";
-import { FlightyAgent } from "./flighty/agent.js";
 import { AirbnbAgent } from "./airbnb/agent.js";
+import { FlightyAgent } from "./flighty/agent.js";
 import { OrchestratorAgent } from "./orchestrator/agent.js";
 
 dotenv.config();
@@ -48,17 +48,11 @@ async function main() {
         // Add delay before deploying Orchestrator
         await new Promise(resolve => setTimeout(resolve, 2000));
 
-        // Deploy Orchestrator Agent
+        // Initialize Orchestrator Agent (but don't deploy/register it)
         const orchestratorAgent = new OrchestratorAgent({
             model: "gpt-4o-mini",
         }, protocol);
         await orchestratorAgent.initialize();
-
-        await protocol.deployAgent(orchestratorAgent, {
-            name: "Orchestrator",
-            description: "Main orchestrator agent that handles user requests",
-            capabilities: ["orchestration"],
-        });
 
         // Start chat interface
         const rl = readline.createInterface({
@@ -66,21 +60,28 @@ async function main() {
             output: process.stdout,
         });
 
-        console.log("Chat started. Type 'exit' to end the conversation.");
+        console.log('\n=== Travel Assistant Started ===');
+        console.log('Type your travel-related questions below.');
+        console.log('Type "exit" to end the conversation.\n');
 
         const askQuestion = () => {
-            rl.question("You: ", async (input) => {
+            rl.question("\nYou: ", async (input) => {
                 if (input.toLowerCase() === "exit") {
+                    console.log('\n[DEBUG] Shutting down chat session...');
+                    await orchestratorAgent.cleanup();
                     await protocol.stop();
+                    console.log('[DEBUG] Chat session ended, all resources cleaned up');
+                    console.log('\n=== Travel Assistant Stopped ===\n');
                     rl.close();
                     return;
                 }
 
                 try {
                     const response = await orchestratorAgent.handleMessage(input);
-                    console.log("Agent:", response.content);
+                    // Add a newline before response for cleaner separation
+                    console.log('\nAssistant:', response.content);
                 } catch (error) {
-                    console.error("Error:", error.message);
+                    console.error('\n[ERROR]:', error.message);
                 }
 
                 askQuestion();
