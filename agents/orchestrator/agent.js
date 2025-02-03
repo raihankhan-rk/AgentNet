@@ -1,7 +1,8 @@
-import { HumanMessage } from "@langchain/core/messages";
+import { CdpAgentkit } from "@coinbase/cdp-agentkit-core";
 import { MemorySaver } from "@langchain/langgraph";
 import { createReactAgent } from "@langchain/langgraph/prebuilt";
 import { ChatOpenAI } from "@langchain/openai";
+import { HumanMessage } from "@langchain/core/messages";
 import { createAgentCommunicationTool, createAgentDiscoveryTool, createMultiAgentCommunicationTool } from "./tools.js";
 import { DEFAULT_SYSTEM_PROMPT } from "./prompts.js";
 
@@ -9,8 +10,8 @@ export class OrchestratorAgent {
     constructor(config, protocol) {
         this.config = config;
         this.protocol = protocol;
-        this.memory = new MemorySaver();
         this.agent = null;
+        this.memory = new MemorySaver();
         // Add default runnable config
         this.runnableConfig = {
             configurable: {
@@ -28,6 +29,12 @@ export class OrchestratorAgent {
             temperature: 0.7,
         });
 
+        // Initialize CDP AgentKit
+        const agentkit = await CdpAgentkit.configureWithWallet({
+            cdpWalletData: this.config.cdpWalletData || "",
+            networkId: this.config.networkId || "base-sepolia",
+        });
+
         const tools = [
             createAgentCommunicationTool(this.protocol),
             createMultiAgentCommunicationTool(this.protocol),
@@ -38,15 +45,16 @@ export class OrchestratorAgent {
             llm,
             tools,
             checkpointSaver: this.memory,
-            messageModifier: DEFAULT_SYSTEM_PROMPT,
+            messageModifier: this.config.systemPrompt || DEFAULT_SYSTEM_PROMPT,
         });
     }
 
     async handleMessage(message) {
         try {
+            console.log('Orchestrator Agent handling message:', message);
             const stream = await this.agent.stream(
                 { messages: [new HumanMessage(message)] },
-                this.runnableConfig,  // Use the runnable config here
+                this.runnableConfig
             );
 
             let response = "";
@@ -58,11 +66,13 @@ export class OrchestratorAgent {
                 }
             }
 
+            console.log('Orchestrator Agent response:', response);
             return {
                 type: "response",
                 content: response.trim(),
             };
         } catch (error) {
+            console.error('Orchestrator Agent error:', error);
             return {
                 type: "error",
                 content: `Error processing request: ${
@@ -70,6 +80,17 @@ export class OrchestratorAgent {
                 }`,
             };
         }
+    }
+
+    getAgent() {
+        if (!this.agent) {
+            throw new Error('Agent not initialized. Call initialize() first.');
+        }
+        return this.agent;
+    }
+
+    getConfig() {
+        return this.runnableConfig;
     }
 
     getPendingResponses() {
