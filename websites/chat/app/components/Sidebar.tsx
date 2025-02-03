@@ -7,7 +7,7 @@ const Sidebar = () => {
   const { rooms, switchRoom, addRoom } = useChat();
 
   return (
-    <div className="w-1/4 bg-blue-100 p-4">
+    <div className="w-1/4 flex flex-col bg-white p-4 relative z-10">
       <h2 className="text-lg font-bold">Chats</h2>
       <ul>
         {rooms.map((room) => (
@@ -20,12 +20,14 @@ const Sidebar = () => {
           </li>
         ))}
       </ul>
-      <button
-        onClick={addRoom}
-        className="mt-4 p-2 bg-blue-500 text-white rounded"
-      >
-        New Chat
-      </button>
+      <div className="flex-grow flex items-end">
+        <button
+          onClick={addRoom}
+          className="w-full p-2 bg-blue-500 text-white rounded mt-4"
+        >
+          New Chat
+        </button>
+      </div>
     </div>
   );
 };
