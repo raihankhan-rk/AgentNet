@@ -249,8 +249,9 @@
       "name": "Harbor View Hotel",
       "description": "Waterfront hotel with marina access",
       "price": 290,
-      "location": "Seattle",
+      "location": "Singapore",
       "availableDates": [
+        "2025-03-24",
         "2025-05-04",
         "2025-05-05",
         "2025-05-06"

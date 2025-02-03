@@ -1,9 +1,13 @@
-import { NextResponse } from 'next/server';
-import hotelsData from '@/data/hotels.json';
+import hotelsData from "@/data/hotels.json";
+import { NextResponse } from "next/server";
 
 const DATE_RANGE_BUFFER = 3; // Number of days to check before and after
 
-function isDateWithinRange(date: string, targetDate: string, buffer: number): boolean {
+function isDateWithinRange(
+  date: string,
+  targetDate: string,
+  buffer: number,
+): boolean {
   const dateObj = new Date(date);
   const targetObj = new Date(targetDate);
   const diffTime = Math.abs(dateObj.getTime() - targetObj.getTime());
@@ -13,10 +17,10 @@ function isDateWithinRange(date: string, targetDate: string, buffer: number): bo
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const place = searchParams.get('place');
-  const checkIn = searchParams.get('checkIn');
-  const checkOut = searchParams.get('checkOut');
-  const occupants = searchParams.get('occupants');
+  const place = searchParams.get("place");
+  const checkIn = searchParams.get("checkIn");
+  const checkOut = searchParams.get("checkOut");
+  const occupants = searchParams.get("occupants");
 
   // Use the hotels data from the JSON file
   const hotels = hotelsData.hotels;
@@ -24,31 +28,38 @@ export async function GET(request: Request) {
   // First filter by place if provided
   let filteredHotels = hotels;
   if (place) {
-    filteredHotels = hotels.filter(hotel => 
+    filteredHotels = hotels.filter((hotel) =>
       hotel.location.toLowerCase().includes(place.toLowerCase())
     );
   }
 
   // Then check dates for the filtered hotels
-  const hotelsWithDates = filteredHotels.map(hotel => {
+  const hotelsWithDates = filteredHotels.map((hotel) => {
     let dateMatches: string[] = [];
     if (checkIn && checkOut) {
-      dateMatches = hotel.availableDates.filter(date => {
-        return isDateWithinRange(date, checkIn, DATE_RANGE_BUFFER) || 
-               isDateWithinRange(date, checkOut, DATE_RANGE_BUFFER);
+      // Check if the hotel has availability for the entire stay period
+      const checkInDate = new Date(checkIn);
+      const checkOutDate = new Date(checkOut);
+      
+      dateMatches = hotel.availableDates.filter((date) => {
+        const currentDate = new Date(date);
+        return currentDate >= checkInDate && currentDate <= checkOutDate;
       });
+
+      return {
+        ...hotel,
+        matchesExactDates: dateMatches.length > 0,
+        nearbyDates: dateMatches,
+        isNearDesiredDates: dateMatches.length > 0,
+      };
     }
 
     return {
       ...hotel,
-      matchesExactDates: checkIn && checkOut ? hotel.availableDates.some(date => 
-        date >= checkIn && date <= checkOut
-      ) : true,
-      nearbyDates: dateMatches,
-      isNearDesiredDates: dateMatches.length > 0
+      matchesExactDates: true,
+      nearbyDates: [],
+      isNearDesiredDates: true,
     };
-  }).filter(hotel => {
-    return hotel.matchesExactDates || hotel.isNearDesiredDates;
   });
 
   // Sort hotels: exact matches first, then nearby dates
@@ -59,4 +70,4 @@ export async function GET(request: Request) {
   });
 
   return NextResponse.json(sortedHotels);
-} 
+}
