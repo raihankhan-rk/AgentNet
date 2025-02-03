@@ -1,17 +1,14 @@
-import { DynamicStructuredTool } from "@langchain/core/tools";
-import z from "zod";
-import { Flight, Ticket } from "../../websites/flighty/types/flight";
+const { DynamicStructuredTool } = require("@langchain/core/tools");
+const z = require("zod");
 
-
- // Tool to search for flights
- 
+// Tool to search for flights
 export function createFlightSearchTool() {
   return new DynamicStructuredTool({
-    name: "search_flights", 
+    name: "search_flights",
     description: "Search for available flights with optional filters for departure location, arrival location, and date",
     schema: z.object({
       from: z.string().optional().describe("Optional departure city"),
-      to: z.string().optional().describe("Optional arrival city"), 
+      to: z.string().optional().describe("Optional arrival city"),
       date: z.string().optional().describe("Optional travel date in YYYY-MM-DD format"),
     }),
     func: async ({ from, to, date }) => {
@@ -30,7 +27,7 @@ export function createFlightSearchTool() {
           throw new Error(`API request failed with status ${response.status}`);
         }
         
-        const flights: Flight[] = await response.json();
+        const flights = await response.json();
         return JSON.stringify(flights, null, 2);
       } catch (error) {
         return `Error searching flights: ${error instanceof Error ? error.message : 'Unknown error'}`;
@@ -39,9 +36,7 @@ export function createFlightSearchTool() {
   });
 }
 
-
 // Tool to retrieve all bookings
-
 export function createGetBookingsTool() {
   return new DynamicStructuredTool({
     name: "get_bookings",
@@ -56,7 +51,7 @@ export function createGetBookingsTool() {
           throw new Error(`API request failed with status ${response.status}`);
         }
         
-        const bookings: Ticket[] = await response.json();
+        const bookings = await response.json();
         return JSON.stringify(bookings, null, 2);
       } catch (error) {
         return `Error retrieving bookings: ${error instanceof Error ? error.message : 'Unknown error'}`;
@@ -66,7 +61,6 @@ export function createGetBookingsTool() {
 }
 
 // Tool to create a new booking
-
 export function createBookFlightTool() {
   return new DynamicStructuredTool({
     name: "book_flight",
@@ -93,7 +87,7 @@ export function createBookFlightTool() {
           throw new Error(`API request failed with status ${response.status}`);
         }
         
-        const booking: Ticket = await response.json();
+        const booking = await response.json();
         return JSON.stringify(booking, null, 2);
       } catch (error) {
         return `Error creating booking: ${error instanceof Error ? error.message : 'Unknown error'}`;
