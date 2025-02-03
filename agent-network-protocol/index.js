@@ -160,12 +160,12 @@ export default class AgentNetworkProtocol {
             const topic = `/agent/${targetPeerId}`;
             console.log('Publishing to topic:', topic);
             
-            // Increased timeout to 30 seconds for debugging
+            // Create promise before sending message
             const responsePromise = new Promise((resolve, reject) => {
                 const timeoutId = setTimeout(() => {
                     this.pendingResponses.delete(senderNode.peerId.toString());
                     reject(new Error(`Response timeout waiting for agent ${targetPeerId}. The agent may be busy or not responding.`));
-                }, 30000); // 30 second timeout for debugging
+                }, 30000); // 30 second timeout
 
                 console.log('Setting up response handler for:', senderNode.peerId.toString());
                 this.pendingResponses.set(senderNode.peerId.toString(), (response) => {
@@ -175,30 +175,13 @@ export default class AgentNetworkProtocol {
                 });
             });
 
-            // Ensure subscription with retry
-            let subscribed = false;
-            for (let i = 0; i < 3 && !subscribed; i++) {
-                try {
-                    if (!senderNode.services.pubsub.getTopics().includes(topic)) {
-                        await senderNode.services.pubsub.subscribe(topic);
-                    }
-                    subscribed = true;
-                } catch (error) {
-                    console.warn(`Subscription attempt ${i + 1} failed:`, error);
-                    await new Promise(resolve => setTimeout(resolve, 100));
-                }
+            // Ensure subscription
+            if (!senderNode.services.pubsub.getTopics().includes(topic)) {
+                await senderNode.services.pubsub.subscribe(topic);
+                await new Promise(resolve => setTimeout(resolve, 1000));
             }
 
-            if (!subscribed) {
-                throw new Error('Failed to subscribe to topic after multiple attempts');
-            }
-
-            // Ensure peer connection
-            const peers = await senderNode.services.pubsub.getPeers(topic);
-            if (peers.length === 0) {
-                await this.connectNodes();
-            }
-
+            // Send message
             const messageData = JSON.stringify({
                 to: targetPeerId,
                 from: senderNode.peerId.toString(),
@@ -206,27 +189,13 @@ export default class AgentNetworkProtocol {
                 timestamp: Date.now()
             });
 
-            // Publish with retry
-            let published = false;
-            for (let i = 0; i < 3 && !published; i++) {
-                try {
-                    await senderNode.services.pubsub.publish(
-                        topic,
-                        new TextEncoder().encode(messageData)
-                    );
-                    published = true;
-                    console.log(`Message sent to ${targetPeerId} on topic ${topic}`);
-                } catch (error) {
-                    console.warn(`Publish attempt ${i + 1} failed:`, error);
-                    await new Promise(resolve => setTimeout(resolve, 100));
-                }
-            }
+            await senderNode.services.pubsub.publish(
+                topic,
+                new TextEncoder().encode(messageData)
+            );
+            console.log('Message published successfully');
 
-            if (!published) {
-                throw new Error('Failed to publish message after multiple attempts');
-            }
-
-            console.log('Waiting for response...');
+            // Wait for response
             return await responsePromise;
 
         } catch (error) {
@@ -276,22 +245,39 @@ export default class AgentNetworkProtocol {
                         return;
                     }
 
-                    const responseData = JSON.stringify({
+                    // Ensure response has isResponse flag
+                    const responseData = {
                         to: data.from,
                         from: data.to,
                         content: response,
                         timestamp: Date.now(),
                         isResponse: true
-                    });
+                    };
 
                     console.log('Sending response:', responseData);
+                    const responseTopic = `/agent/${data.from}`;
                     await receivingNode.services.pubsub.publish(
-                        `/agent/${data.from}`,
-                        new TextEncoder().encode(responseData)
+                        responseTopic,
+                        new TextEncoder().encode(JSON.stringify(responseData))
                     );
                     console.log('Response sent successfully');
                 } catch (error) {
                     console.error('Error processing message:', error);
+                    // Send error response back
+                    const errorResponse = {
+                        to: data.from,
+                        from: data.to,
+                        content: { type: 'error', content: error.message },
+                        timestamp: Date.now(),
+                        isResponse: true
+                    };
+                    const receivingNode = this.nodes.get(data.to);
+                    if (receivingNode) {
+                        await receivingNode.services.pubsub.publish(
+                            `/agent/${data.from}`,
+                            new TextEncoder().encode(JSON.stringify(errorResponse))
+                        );
+                    }
                 }
             } else {
                 console.log('No handler found for message');

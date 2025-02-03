@@ -1,25 +1,17 @@
-import { HumanMessage } from "@langchain/core/messages";
+import { CdpAgentkit } from "@coinbase/cdp-agentkit-core";
+import { CdpToolkit } from "@coinbase/cdp-langchain";
 import { MemorySaver } from "@langchain/langgraph";
 import { createReactAgent } from "@langchain/langgraph/prebuilt";
 import { ChatOpenAI } from "@langchain/openai";
-import { createAgentCommunicationTool, createAgentDiscoveryTool, createMultiAgentCommunicationTool } from "./tools.js";
-import { DEFAULT_SYSTEM_PROMPT } from "./prompts.js";
+import { HumanMessage } from "@langchain/core/messages";
+import { createSearchHotelsTool, createGetHotelDetailsTool, createBookHotelTool, createGetBookingsTool } from "./tools.js";
+import { AIRBNB_SYSTEM_PROMPT } from "./prompts.js";
 
-export class OrchestratorAgent {
-    constructor(config, protocol) {
+export class AirbnbAgent {
+    constructor(config) {
         this.config = config;
-        this.protocol = protocol;
-        this.memory = new MemorySaver();
         this.agent = null;
-        // Add default runnable config
-        this.runnableConfig = {
-            configurable: {
-                thread_id: "Orchestrator_Agent",
-                metadata: {
-                    agent_type: "orchestrator",
-                },
-            },
-        };
+        this.memory = new MemorySaver();
     }
 
     async initialize() {
@@ -29,24 +21,33 @@ export class OrchestratorAgent {
         });
 
         const tools = [
-            createAgentCommunicationTool(this.protocol),
-            createMultiAgentCommunicationTool(this.protocol),
-            createAgentDiscoveryTool(this.protocol),
+            createSearchHotelsTool(),
+            createGetHotelDetailsTool(),
+            createBookHotelTool(),
+            createGetBookingsTool()
         ];
 
         this.agent = createReactAgent({
             llm,
             tools,
             checkpointSaver: this.memory,
-            messageModifier: DEFAULT_SYSTEM_PROMPT,
+            messageModifier: AIRBNB_SYSTEM_PROMPT,
         });
     }
 
     async handleMessage(message) {
         try {
+            console.log('Airbnb Agent handling message:', message);
             const stream = await this.agent.stream(
-                { messages: [new HumanMessage(message)] },
-                this.runnableConfig,  // Use the runnable config here
+                { messages: [new HumanMessage(message.content)] },
+                {
+                    configurable: {
+                        thread_id: "Airbnb_Agent",
+                        metadata: {
+                            agent_type: "accommodation",
+                        },
+                    },
+                }
             );
 
             let response = "";
@@ -58,11 +59,13 @@ export class OrchestratorAgent {
                 }
             }
 
+            console.log('Airbnb Agent response:', response);
             return {
                 type: "response",
                 content: response.trim(),
             };
         } catch (error) {
+            console.error('Airbnb Agent error:', error);
             return {
                 type: "error",
                 content: `Error processing request: ${
@@ -71,8 +74,4 @@ export class OrchestratorAgent {
             };
         }
     }
-
-    getPendingResponses() {
-        return this.protocol.pendingResponses;
-    }
-}
+} 

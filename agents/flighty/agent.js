@@ -49,28 +49,40 @@ export class FlightyAgent {
 
     async handleMessage(message) {
         try {
+            console.log('Flighty Agent handling message:', message);
             const stream = await this.agent.stream(
                 { messages: [new HumanMessage(message.content)] },
-                this.config
+                {
+                    configurable: {
+                        thread_id: "Flighty_Agent",
+                        metadata: {
+                            agent_type: "flight-booking",
+                        },
+                    },
+                }
             );
 
-            let response = '';
+            let response = "";
             for await (const chunk of stream) {
                 if ("agent" in chunk) {
-                    response += chunk.agent.messages[0].content + '\n';
+                    response += chunk.agent.messages[0].content + "\n";
                 } else if ("tools" in chunk) {
-                    response += chunk.tools.messages[0].content + '\n';
+                    response += chunk.tools.messages[0].content + "\n";
                 }
             }
 
+            console.log('Flighty Agent response:', response);
             return {
-                type: 'response',
-                content: response.trim()
+                type: "response",
+                content: response.trim(),
             };
         } catch (error) {
+            console.error('Flighty Agent error:', error);
             return {
-                type: 'error',
-                content: `Error processing request: ${error.message}`
+                type: "error",
+                content: `Error processing request: ${
+                    error instanceof Error ? error.message : "Unknown error"
+                }`,
             };
         }
     }

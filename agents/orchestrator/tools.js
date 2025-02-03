@@ -2,63 +2,114 @@ import { DynamicStructuredTool } from "@langchain/core/tools";
 import z from "zod";
 
 export function createAgentCommunicationTool(protocol) {
-  let cachedAgents = null;  // Cache for the current request
+    let cachedAgents = {};  // Cache for agents by capability
 
-  return new DynamicStructuredTool({
-    name: "communicate_with_agent",
-    description: "Communicate with another agent based on capability",
-    schema: z.object({
-      capability: z.string().describe("The capability to search for"),
-      message: z.string().describe("The message to send"),
-      requireResponse: z.boolean().optional().describe("Whether to wait for response"),
-      metadata: z.record(z.any()).optional().describe("Additional metadata"),
-    }),
-    func: async ({ capability, message, requireResponse = true, metadata = {} }) => {
-      try {
-        // Use cached agents if available, otherwise search
-        if (!cachedAgents) {
-          cachedAgents = await protocol.findAgentsByCapability(capability.trim().toLowerCase());
-        }
-        
-        if (cachedAgents.length === 0) {
-          return JSON.stringify({
-            type: 'error',
-            content: `No agents found with capability: ${capability}`
-          });
-        }
+    return new DynamicStructuredTool({
+        name: "communicate_with_agent",
+        description: "Communicate with another agent based on capability",
+        schema: z.object({
+            capability: z.string().describe("The capability to search for"),
+            message: z.string().describe("The message to send"),
+            requireResponse: z.boolean().optional().describe("Whether to wait for response"),
+            metadata: z.record(z.any()).optional().describe("Additional metadata"),
+            parallel: z.boolean().optional().describe("Whether to run in parallel with other requests")
+        }),
+        func: async ({ capability, message, requireResponse = true, metadata = {}, parallel = false }) => {
+            try {
+                // Use cached agents if available, otherwise search
+                if (!cachedAgents[capability]) {
+                    cachedAgents[capability] = await protocol.findAgentsByCapability(capability.trim().toLowerCase());
+                }
+                
+                if (cachedAgents[capability].length === 0) {
+                    return JSON.stringify({
+                        type: 'error',
+                        content: `No agents found with capability: ${capability}`
+                    });
+                }
 
-        const targetAgent = cachedAgents[0];
-        const messageData = {
-          type: 'request',
-          content: message,
-          metadata,
-          timestamp: Date.now()
-        };
+                const targetAgent = cachedAgents[capability][0];
+                const messageData = {
+                    type: 'request',
+                    content: message,
+                    metadata: {
+                        ...metadata,
+                        parallel
+                    },
+                    timestamp: Date.now()
+                };
 
-        if (requireResponse) {
-          const response = await protocol.sendMessage(targetAgent.peerId, messageData);
-          // Clear cache after successful communication
-          cachedAgents = null;
-          return JSON.stringify(response);
-        } else {
-          await protocol.sendMessage(targetAgent.peerId, messageData);
-          // Clear cache after successful communication
-          cachedAgents = null;
-          return JSON.stringify({
-            type: 'response',
-            content: 'Message sent successfully'
-          });
+                if (requireResponse) {
+                    const response = await protocol.sendMessage(targetAgent.peerId, messageData);
+                    return JSON.stringify(response);
+                } else {
+                    await protocol.sendMessage(targetAgent.peerId, messageData);
+                    return JSON.stringify({
+                        type: 'response',
+                        content: 'Message sent successfully'
+                    });
+                }
+            } catch (error) {
+                // Clear cache on error
+                delete cachedAgents[capability];
+                return JSON.stringify({
+                    type: 'error',
+                    content: `Communication failed: ${error.message}`
+                });
+            }
+        },
+    });
+}
+
+export function createMultiAgentCommunicationTool(protocol) {
+    return new DynamicStructuredTool({
+        name: "communicate_with_multiple_agents",
+        description: "Communicate with multiple agents in parallel",
+        schema: z.object({
+            requests: z.array(z.object({
+                capability: z.string(),
+                message: z.string(),
+                metadata: z.record(z.any()).optional()
+            })).describe("Array of requests to different agents")
+        }),
+        func: async ({ requests }) => {
+            try {
+                const responses = await Promise.all(
+                    requests.map(async (request) => {
+                        const agents = await protocol.findAgentsByCapability(request.capability.trim().toLowerCase());
+                        if (agents.length === 0) {
+                            return {
+                                capability: request.capability,
+                                type: 'error',
+                                content: `No agents found with capability: ${request.capability}`
+                            };
+                        }
+
+                        const targetAgent = agents[0];
+                        const messageData = {
+                            type: 'request',
+                            content: request.message,
+                            metadata: request.metadata || {},
+                            timestamp: Date.now()
+                        };
+
+                        const response = await protocol.sendMessage(targetAgent.peerId, messageData);
+                        return {
+                            capability: request.capability,
+                            ...response
+                        };
+                    })
+                );
+
+                return JSON.stringify(responses);
+            } catch (error) {
+                return JSON.stringify({
+                    type: 'error',
+                    content: `Parallel communication failed: ${error.message}`
+                });
+            }
         }
-      } catch (error) {
-        // Clear cache on error
-        cachedAgents = null;
-        return JSON.stringify({
-          type: 'error',
-          content: `Communication failed: ${error.message}`
-        });
-      }
-    },
-  });
+    });
 }
 
 export function createAgentDiscoveryTool(protocol) {
