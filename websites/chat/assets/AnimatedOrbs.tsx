@@ -9,13 +9,13 @@ const AnimatedOrbs = () => {
                 <circle cx="565" cy="707" r="207" fill="#FF86E1"/>
             </g>
             <defs>
-            <filter id="filter0_f_2005_93" x="322" y="150" width="880" height="880" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
-                <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+            <filter id="filter0_f_2005_93" x="322" y="150" width="880" height="880" filterUnits="userSpaceOnUse" colorInterpolationFilters="sRGB">
+                <feFlood floodOpacity="0" result="BackgroundImageFix"/>
                 <feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
                 <feGaussianBlur stdDeviation="150" result="effect1_foregroundBlur_2005_93"/>
             </filter>
-            <filter id="filter1_f_2005_93" x="-142" y="0" width="1414" height="1414" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
-                <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+            <filter id="filter1_f_2005_93" x="-142" y="0" width="1414" height="1414" filterUnits="userSpaceOnUse" colorInterpolationFilters="sRGB">
+                <feFlood floodOpacity="0" result="BackgroundImageFix"/>
                 <feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
                 <feGaussianBlur stdDeviation="250" result="effect1_foregroundBlur_2005_93"/>
             </filter>
@@ -30,13 +30,13 @@ const AnimatedOrbs = () => {
                 <circle cx="565" cy="707" r="207" fill="#FF86E1"/>
             </g>
             <defs>
-            <filter id="filter0_f_2005_93" x="322" y="150" width="880" height="880" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
-                <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+            <filter id="filter0_f_2005_93" x="322" y="150" width="880" height="880" filterUnits="userSpaceOnUse" colorInterpolationFilters="sRGB">
+                <feFlood floodOpacity="0" result="BackgroundImageFix"/>
                 <feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
                 <feGaussianBlur stdDeviation="150" result="effect1_foregroundBlur_2005_93"/>
             </filter>
-            <filter id="filter1_f_2005_93" x="-142" y="0" width="1414" height="1414" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
-                <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+            <filter id="filter1_f_2005_93" x="-142" y="0" width="1414" height="1414" filterUnits="userSpaceOnUse" colorInterpolationFilters="sRGB">
+                <feFlood floodOpacity="0" result="BackgroundImageFix"/>
                 <feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
                 <feGaussianBlur stdDeviation="250" result="effect1_foregroundBlur_2005_93"/>
             </filter>
@@ -51,13 +51,13 @@ const AnimatedOrbs = () => {
                 <circle cx="565" cy="707" r="207" fill="#FF86E1"/>
             </g>
             <defs>
-            <filter id="filter0_f_2005_93" x="322" y="150" width="880" height="880" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
-                <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+            <filter id="filter0_f_2005_93" x="322" y="150" width="880" height="880" filterUnits="userSpaceOnUse" colorInterpolationFilters="sRGB">
+                <feFlood floodOpacity="0" result="BackgroundImageFix"/>
                 <feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
                 <feGaussianBlur stdDeviation="150" result="effect1_foregroundBlur_2005_93"/>
             </filter>
-            <filter id="filter1_f_2005_93" x="-142" y="0" width="1414" height="1414" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
-                <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+            <filter id="filter1_f_2005_93" x="-142" y="0" width="1414" height="1414" filterUnits="userSpaceOnUse" colorInterpolationFilters="sRGB">
+                <feFlood floodOpacity="0" result="BackgroundImageFix"/>
                 <feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
                 <feGaussianBlur stdDeviation="250" result="effect1_foregroundBlur_2005_93"/>
             </filter>
