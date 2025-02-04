@@ -4,12 +4,13 @@ import ChatArea from './components/ChatArea';
 import TextInput from './components/TextInput';
 import { ChatProvider } from './context/ChatContext';
 import AnimatedOrbs from '../assets/AnimatedOrbs';
+import { WalletComponents } from './components/walletConnectButton';
 
 export default function Home() {
   return (
     <ChatProvider>
       <div className="flex h-screen w-screen overflow-hidden relative">
-        
+          <WalletComponents/>
           <AnimatedOrbs />  
        
         <Sidebar />
