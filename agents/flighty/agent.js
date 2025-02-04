@@ -1,13 +1,13 @@
 import { HumanMessage } from "@langchain/core/messages";
 import { FLIGHTY_SYSTEM_PROMPT } from "./prompts.js";
-import { createBookFlightTool, createFlightSearchTool, createGetBookingsTool } from "./tools.js";
+import { createFlightSearchTool, createBookFlightTool, createGetBookingsTool } from "./tools.js";
 
 export class FlightyAgent {
     static getTools() {
         return [
             createFlightSearchTool(),
-            createGetBookingsTool(),
-            createBookFlightTool()
+            createBookFlightTool(),
+            createGetBookingsTool()
         ];
     }
 
@@ -18,8 +18,12 @@ export class FlightyAgent {
     static async handleMessage(agent, message) {
         try {
             console.log('Flighty Agent handling message:', message);
+            
+            // Create a simple HumanMessage with just the text content
+            const humanMessage = new HumanMessage(message);
+
             const stream = await agent.stream(
-                { messages: [new HumanMessage(message)] },
+                { messages: [humanMessage] },
                 {
                     configurable: {
                         thread_id: "Flighty_Agent",

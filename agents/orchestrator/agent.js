@@ -10,7 +10,11 @@ export class OrchestratorAgent {
     constructor(config, protocol) {
         this.config = config;
         this.protocol = protocol;
-        this.sessionId = `orchestrator_${Date.now()}`;
+        this.llm = new ChatOpenAI({
+            model: config.model || "gpt-4o-mini",
+        });
+        this.sessionId = null;
+        this.peerId = null;
         this.agent = null;
         this.runnableConfig = {
             configurable: {
@@ -23,10 +27,10 @@ export class OrchestratorAgent {
     }
 
     async initialize() {
-        const llm = new ChatOpenAI({
-            model: this.config.model || "gpt-4o-mini",
-            temperature: 0.7,
-        });
+        // Create an ephemeral node for this session
+        this.sessionId = `orchestrator_${Date.now()}`;
+        this.peerId = await this.protocol.createEphemeralNode(this.sessionId);
+        console.log('Orchestrator initialized with peerId:', this.peerId);
 
         const agentkit = await CdpAgentkit.configureWithWallet({
             cdpWalletData: this.config.cdpWalletData || "",
@@ -40,7 +44,7 @@ export class OrchestratorAgent {
         ];
 
         this.agent = createReactAgent({
-            llm,
+            llm: this.llm,
             tools,
             checkpointSaver: new MemorySaver(),
             messageModifier: this.config.systemPrompt || DEFAULT_SYSTEM_PROMPT,
@@ -49,45 +53,27 @@ export class OrchestratorAgent {
 
     async handleMessage(message) {
         try {
-            // Create ephemeral node if needed for protocol communication
-            if (!this.protocol.getEphemeralNode(this.sessionId)) {
-                await this.protocol.createEphemeralNode(this.sessionId);
-            }
+            // Process the message with the LLM
+            const response = await this.llm.invoke([new HumanMessage(message)]);
             
-            console.log('\n[DEBUG] Orchestrator processing message:', message);
-            const stream = await this.agent.stream(
-                { messages: [new HumanMessage(message)] },
-                this.runnableConfig
-            );
-
-            let response = "";
-            for await (const chunk of stream) {
-                if ("agent" in chunk) {
-                    response += chunk.agent.messages[0].content + "\n";
-                } else if ("tools" in chunk) {
-                    response += chunk.tools.messages[0].content + "\n";
-                }
-            }
-
-            console.log('[DEBUG] Orchestrator finished processing');
-            process.stdout.write('\x1b[2K\r');
+            // Return the response
             return {
                 type: "response",
-                content: response.trim(),
+                content: response.content,
             };
         } catch (error) {
-            console.error('\n[ERROR] Orchestrator Agent error:', error);
+            console.error('Error in orchestrator:', error);
             return {
                 type: "error",
-                content: `Error processing request: ${
-                    error instanceof Error ? error.message : "Unknown error"
-                }`,
+                content: `Error processing request: ${error.message}`,
             };
         }
     }
 
     async cleanup() {
-        await this.protocol.destroyEphemeralNode(this.sessionId);
+        if (this.sessionId) {
+            await this.protocol.destroyEphemeralNode(this.sessionId);
+        }
     }
 
     getAgent() {

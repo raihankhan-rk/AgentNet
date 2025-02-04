@@ -1,50 +1,17 @@
 import dotenv from "dotenv";
 import * as readline from "readline";
 import AgentNetworkProtocol from "../agent-network-protocol/index.js";
-import { AirbnbAgent } from "./airbnb/agent.js";
-import { FlightyAgent } from "./flighty/agent.js";
 import { OrchestratorAgent } from "./orchestrator/agent.js";
 
 dotenv.config();
 
 async function main() {
     try {
-        // Create and initialize the protocol
+        // Create protocol instance for orchestrator
         const protocol = new AgentNetworkProtocol();
         await protocol.initialize();
 
-        // Register the agent builders
-        protocol.registerAgentBuilder('flighty', FlightyAgent);
-        protocol.registerAgentBuilder('airbnb', AirbnbAgent);
-
-        // Create and deploy Flighty Agent with CDP configuration
-        console.log('Creating and Deploying Flighty Agent...');
-        const flightyDeployment = await protocol.createAndDeployCdpAgent('flighty', {
-            cdpWalletData: process.env.CDP_WALLET_DATA || "",
-            networkId: process.env.NETWORK_ID || "base-sepolia",
-            model: "gpt-4o-mini",
-            name: "Flighty Travel Assistant",
-            description: "An AI agent that helps users search and book flights",
-            capabilities: ["flight-booking"],
-        });
-        console.log('Flighty Agent deployed with peerId:', flightyDeployment.peerId);
-
-        // Create and deploy Airbnb Agent with CDP configuration
-        console.log('Creating and Deploying Airbnb Agent...');
-        const airbnbDeployment = await protocol.createAndDeployCdpAgent('airbnb', {
-            cdpWalletData: process.env.AIRBNB_CDP_WALLET_DATA || "",
-            networkId: process.env.AIRBNB_NETWORK_ID || "base-sepolia",
-            model: "gpt-4o-mini",
-            name: "Airbnb Accommodation Assistant",
-            description: "An AI agent that helps users search and book accommodations",
-            capabilities: ["accommodation-booking"],
-        });
-        console.log('Airbnb Agent deployed with peerId:', airbnbDeployment.peerId);
-
-        // Add delay before deploying Orchestrator
-        await new Promise(resolve => setTimeout(resolve, 2000));
-
-        // Initialize Orchestrator Agent (but don't deploy/register it)
+        // Initialize Orchestrator Agent
         const orchestratorAgent = new OrchestratorAgent({
             model: "gpt-4o-mini",
         }, protocol);
@@ -74,7 +41,6 @@ async function main() {
 
                 try {
                     const response = await orchestratorAgent.handleMessage(input);
-                    // Add a newline before response for cleaner separation
                     console.log('\nAssistant:', response.content);
                 } catch (error) {
                     console.error('\n[ERROR]:', error.message);
@@ -86,9 +52,9 @@ async function main() {
 
         askQuestion();
     } catch (error) {
-        console.error("Failed to start agents:", error);
+        console.error("Failed to start orchestrator:", error);
         process.exit(1);
     }
 }
 
-main();
+main().catch(console.error);
