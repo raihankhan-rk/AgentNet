@@ -16,15 +16,14 @@ export default function FlightSearch() {
     
     const selectedDate = new Date(date);
     const startDate = new Date(selectedDate);
-    startDate.setDate(selectedDate.getDate() - 3);
-    const endDate = new Date(selectedDate);
-    endDate.setDate(selectedDate.getDate() + 3);
+    startDate.setDate(selectedDate.getDate());
+    // const endDate = new Date(selectedDate);
+    // endDate.setDate(selectedDate.getDate() + 3);
 
     const params = new URLSearchParams({
       from,
       to,
-      startDate: startDate.toISOString().split('T')[0],
-      endDate: endDate.toISOString().split('T')[0],
+      date: startDate.toISOString().split('T')[0]
     });
 
     const response = await fetch(`/api/flights?${params}`);
