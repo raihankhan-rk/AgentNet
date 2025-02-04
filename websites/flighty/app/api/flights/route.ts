@@ -23,9 +23,27 @@ export async function GET(request: Request) {
   }
 
   if (date) {
-    flights = flights.filter(flight => 
-      flight.departureTime.startsWith(date)
-    );
+    // flights = flights.filter(flight => 
+    //   flight.departureTime.startsWith(date)
+    // );
+    const selectedDate = new Date(date);
+  
+    // update the flight departureTime to the startDate
+    flights.forEach(flight => {
+      flight.departureTime = selectedDate.toISOString();
+      const departureTime = new Date(selectedDate);
+      const arrivalTime = new Date(departureTime);
+      arrivalTime.setHours(departureTime.getHours() + 2);
+      flight.arrivalTime = arrivalTime.toISOString();
+
+      const boardingTime = new Date(departureTime);
+      boardingTime.setMinutes(departureTime.getMinutes() - 30);
+      flight.boardingTime = boardingTime.toISOString();
+
+    });
+
+    console.log("flights:", flights, selectedDate);
+
   }
 
   return NextResponse.json(flights);

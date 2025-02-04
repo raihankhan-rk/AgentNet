@@ -1,37 +1,63 @@
 import { CdpAgentkit } from "@coinbase/cdp-agentkit-core";
 import { CdpToolkit } from "@coinbase/cdp-langchain";
+import { HumanMessage } from "@langchain/core/messages";
 import { MemorySaver } from "@langchain/langgraph";
 import { createReactAgent } from "@langchain/langgraph/prebuilt";
 import { ChatOpenAI } from "@langchain/openai";
-import { HumanMessage } from "@langchain/core/messages";
-import { createSearchHotelsTool, createGetHotelDetailsTool, createBookHotelTool, createGetBookingsTool } from "./tools.js";
 import { AIRBNB_SYSTEM_PROMPT } from "./prompts.js";
+import { createBookHotelTool, createGetBookingsTool, createGetHotelDetailsTool, createSearchHotelsTool } from "./tools.js";
 
 export class AirbnbAgent {
-    constructor(config) {
-        this.config = config;
+    constructor(agentConfig) {
+        this.agentConfig = agentConfig;
         this.agent = null;
-        this.memory = new MemorySaver();
+        this.config = null;
     }
 
     async initialize() {
         const llm = new ChatOpenAI({
-            model: this.config.model || "gpt-4o-mini",
+            model: "gpt-4o-mini",
             temperature: 0.7,
         });
 
-        const tools = [
+        // Initialize CDP AgentKit
+        const agentkit = await CdpAgentkit.configureWithWallet({
+            cdpWalletData: process.env.CDP_WALLET_DATA || "",
+            networkId: this.agentConfig.networkId || "base-sepolia",
+        });
+
+        this.agentConfig = {
+            ...this.agentConfig,
+            walletAddress: JSON.parse(process.env.CDP_WALLET_DATA).defaultAddressId
+        }
+
+        // Setup tools
+        const cdpToolkit = new CdpToolkit(agentkit);
+        const cdpTools = cdpToolkit.getTools();
+        const customTools = [
             createSearchHotelsTool(),
             createGetHotelDetailsTool(),
             createBookHotelTool(),
             createGetBookingsTool()
         ];
+        const tools = [...cdpTools, ...customTools];
+
+        // Create agent
+        const memory = new MemorySaver();
+        this.config = {
+            configurable: {
+                thread_id: "Airbnb_Agent",
+                metadata: {
+                    agent_type: "accommodation-booking",
+                },
+            }
+        };
 
         this.agent = createReactAgent({
             llm,
             tools,
-            checkpointSaver: this.memory,
-            messageModifier: AIRBNB_SYSTEM_PROMPT,
+            checkpointSaver: memory,
+            messageModifier: this.agentConfig.systemPrompt || AIRBNB_SYSTEM_PROMPT,
         });
     }
 
@@ -39,15 +65,8 @@ export class AirbnbAgent {
         try {
             console.log('Airbnb Agent handling message:', message);
             const stream = await this.agent.stream(
-                { messages: [new HumanMessage(message.content)] },
-                {
-                    configurable: {
-                        thread_id: "Airbnb_Agent",
-                        metadata: {
-                            agent_type: "accommodation",
-                        },
-                    },
-                }
+                { messages: [new HumanMessage(message)] },
+                this.config
             );
 
             let response = "";
@@ -68,10 +87,23 @@ export class AirbnbAgent {
             console.error('Airbnb Agent error:', error);
             return {
                 type: "error",
-                content: `Error processing request: ${
-                    error instanceof Error ? error.message : "Unknown error"
-                }`,
+                content: `Error processing request: ${error instanceof Error ? error.message : "Unknown error"
+                    }`,
             };
         }
     }
-} 
+
+    getAgent() {
+        if (!this.agent) {
+            throw new Error('Agent not initialized. Call initialize() first.');
+        }
+        return this.agent;
+    }
+
+    getConfig() {
+        if (!this.config) {
+            throw new Error('Agent not initialized. Call initialize() first.');
+        }
+        return this.config;
+    }
+}

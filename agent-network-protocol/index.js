@@ -12,7 +12,7 @@ export default class AgentNetworkProtocol {
         this.registrarUrl = 'http://localhost:3000';
         this.messageHandlers = new Map();
         this.pendingResponses = new Map();
-        this.nodes = new Map(); // Store multiple nodes
+        this.nodes = new Map();
     }
 
     async initialize() {
@@ -44,7 +44,7 @@ export default class AgentNetworkProtocol {
 
     async createNode() {
         const port = Math.floor(Math.random() * (65535 - 1024) + 1024);
-        
+
         const nodeConfig = {
             ...this.baseConfig,
             addresses: {
@@ -61,7 +61,7 @@ export default class AgentNetworkProtocol {
         // Subscribe to messages for this node
         const topic = `/agent/${node.peerId.toString()}`;
         await node.services.pubsub.subscribe(topic);
-        
+
         // Set up message handler
         node.services.pubsub.addEventListener('message', (evt) => {
             if (evt.detail.topic === topic) {
@@ -77,43 +77,37 @@ export default class AgentNetworkProtocol {
             throw new Error('Protocol not initialized. Call initialize() first.');
         }
 
-        const { name, description, capabilities } = agentMetadata;
+        const { name, description, capabilities, walletAddress } = agentMetadata;
 
         if (!name || !description || !capabilities) {
             throw new Error('Missing required agent metadata');
         }
 
-        // Create a new node for this agent
         const node = await this.createNode();
         const peerId = node.peerId.toString();
-        
-        // Store the node
+
         this.nodes.set(peerId, node);
 
-        // Register message handler for this agent
         this.messageHandlers.set(peerId, async (message) => {
             const response = await agentInstance.handleMessage(message);
             return response;
         });
 
-        // Register the agent with the network
         try {
             await this._registerAgent({
                 peerId,
                 name,
                 description,
-                capabilities
+                capabilities,
+                walletAddress
             });
             console.log('Successfully registered agent:', name, 'with peerId:', peerId);
-            
-            // Wait a moment before connecting nodes
+
             await new Promise(resolve => setTimeout(resolve, 1000));
-            
-            // Connect this node to other nodes
+
             await this.connectNodes();
-            
+
         } catch (error) {
-            // Clean up on failure
             await node.stop();
             this.nodes.delete(peerId);
             this.messageHandlers.delete(peerId);
@@ -159,13 +153,12 @@ export default class AgentNetworkProtocol {
         try {
             const topic = `/agent/${targetPeerId}`;
             console.log('Publishing to topic:', topic);
-            
-            // Create promise before sending message
+
             const responsePromise = new Promise((resolve, reject) => {
                 const timeoutId = setTimeout(() => {
                     this.pendingResponses.delete(senderNode.peerId.toString());
                     reject(new Error(`Response timeout waiting for agent ${targetPeerId}. The agent may be busy or not responding.`));
-                }, 30000); // 30 second timeout
+                }, 30000);
 
                 console.log('Setting up response handler for:', senderNode.peerId.toString());
                 this.pendingResponses.set(senderNode.peerId.toString(), (response) => {
@@ -211,8 +204,7 @@ export default class AgentNetworkProtocol {
             console.log('Message data:', data);
             console.log('Registered handlers:', Array.from(this.messageHandlers.keys()));
             console.log('Pending responses:', Array.from(this.pendingResponses.keys()));
-            
-            // Fast-path for responses
+
             if (data.isResponse) {
                 console.log('Processing response message');
                 const resolver = this.pendingResponses.get(data.to);
@@ -225,7 +217,7 @@ export default class AgentNetworkProtocol {
                 }
                 return;
             }
-            
+
             // Handle new requests
             console.log('Processing new request');
             const handler = this.messageHandlers.get(data.to);
@@ -300,7 +292,6 @@ export default class AgentNetworkProtocol {
     }
 
     async stop() {
-        // Stop all nodes
         for (const [peerId, node] of this.nodes) {
             await node.stop();
             this.nodes.delete(peerId);
@@ -308,19 +299,16 @@ export default class AgentNetworkProtocol {
         }
     }
 
-    // Add this new method to establish connections between nodes
     async connectNodes() {
         const connectedPeers = new Set();
-        
+
         for (const [peerId, node] of this.nodes) {
             for (const [otherPeerId, otherNode] of this.nodes) {
                 if (peerId !== otherPeerId && !connectedPeers.has(`${peerId}-${otherPeerId}`)) {
                     try {
-                        // Subscribe to each other's topics before attempting connection
                         const topic = `/agent/${otherPeerId}`;
                         await node.services.pubsub.subscribe(topic);
-                        
-                        // Attempt to connect with retry
+
                         let connected = false;
                         let attempts = 0;
                         while (!connected && attempts < 3) {
@@ -333,11 +321,10 @@ export default class AgentNetworkProtocol {
                                 await new Promise(resolve => setTimeout(resolve, 1000));
                             }
                         }
-                        
-                        // Mark this pair as connected
+
                         connectedPeers.add(`${peerId}-${otherPeerId}`);
                         connectedPeers.add(`${otherPeerId}-${peerId}`);
-                        
+
                     } catch (error) {
                         console.error(`Failed to connect ${peerId} to ${otherPeerId}:`, error.message);
                     }

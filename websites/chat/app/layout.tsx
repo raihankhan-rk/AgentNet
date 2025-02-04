@@ -28,6 +28,12 @@ export default function RootLayout({
     <html lang="en">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        style={{
+          backgroundImage: 'url(/bg-light.png)',
+          backgroundSize: '100% auto',
+          backgroundPosition: 'bottom',
+          backgroundRepeat: 'no-repeat',
+        }}
       >
         <Providers>
         {children}

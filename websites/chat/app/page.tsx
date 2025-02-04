@@ -1,10 +1,8 @@
-import React from 'react';
-import Sidebar from './components/Sidebar';
 import ChatArea from './components/ChatArea';
+import Sidebar from './components/Sidebar';
 import TextInput from './components/TextInput';
 import { ChatProvider } from './context/ChatContext';
 import AnimatedOrbs from '../assets/AnimatedOrbs';
-import { WalletComponents } from './components/walletConnectButton';
 
 export default function Home() {
   return (

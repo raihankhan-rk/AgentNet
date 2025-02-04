@@ -1,6 +1,7 @@
 "use client"
 import React, { useState, KeyboardEvent } from 'react';
 import { useChat } from '../context/ChatContext';
+import Icons from '@/assets/Icons';
 
 const TextInput = () => {
   const [input, setInput] = useState('');
@@ -28,21 +29,23 @@ const TextInput = () => {
   };
 
   return (
-    <div className="p-4 border-t flex gap-2 items-center">
-      <input
-        type="text"
-        value={input}
-        onChange={(e) => setInput(e.target.value)}
-        onKeyDown={handleKeyPress}
-        className="flex-1 p-2 border rounded"
-        placeholder="Type a message..."
-      />
-      <button 
-        onClick={handleSend} 
-        className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
-      >
-        Send
-      </button>
+    <div className=" p-4 flex gap-2 items-center">
+      <div className="flex-1 flex gap-2 items-center bg-white px-2 pl-0 h-12 border rounded-lg overflow-hidden">
+        <input
+          type="text"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={handleKeyPress}
+          className="w-full h-full pl-2 outline-none"
+          placeholder="Type a message..."
+        />
+        <button 
+          onClick={handleSend} 
+          className=""
+        >
+          <Icons.send className="w-6 h-6 text-[#C4CAFF] hover:text-[#aeb4ea]"/>
+        </button>
+      </div>
     </div>
   );
 };

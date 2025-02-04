@@ -1,11 +1,11 @@
 import { CdpAgentkit } from "@coinbase/cdp-agentkit-core";
 import { CdpToolkit } from "@coinbase/cdp-langchain";
+import { HumanMessage } from "@langchain/core/messages";
 import { MemorySaver } from "@langchain/langgraph";
 import { createReactAgent } from "@langchain/langgraph/prebuilt";
 import { ChatOpenAI } from "@langchain/openai";
-import { HumanMessage } from "@langchain/core/messages";
-import { createFlightSearchTool, createGetBookingsTool, createBookFlightTool } from "./tools.js";
 import { FLIGHTY_SYSTEM_PROMPT } from "./prompts.js";
+import { createBookFlightTool, createFlightSearchTool, createGetBookingsTool } from "./tools.js";
 
 export class FlightyAgent {
     constructor(agentConfig) {
@@ -17,13 +17,18 @@ export class FlightyAgent {
     async initialize() {
         const llm = new ChatOpenAI({
             model: this.agentConfig.model || "gpt-4o-mini",
+            temperature: 0.7,
         });
 
-        // Initialize CDP AgentKit
         const agentkit = await CdpAgentkit.configureWithWallet({
-            cdpWalletData: this.agentConfig.cdpWalletData,
-            networkId: this.agentConfig.networkId,
+            cdpWalletData: process.env.CDP_WALLET_DATA || "",
+            networkId: this.agentConfig.networkId || "base-sepolia",
         });
+
+        this.agentConfig = {
+            ...this.agentConfig,
+            walletAddress: JSON.parse(process.env.CDP_WALLET_DATA).defaultAddressId
+        }
 
         // Setup tools
         const cdpToolkit = new CdpToolkit(agentkit);
@@ -37,7 +42,14 @@ export class FlightyAgent {
 
         // Create agent
         const memory = new MemorySaver();
-        this.config = { configurable: { thread_id: "Flighty Agent" } };
+        this.config = { 
+            configurable: { 
+                thread_id: "Flighty_Agent",
+                metadata: {
+                    agent_type: "flight-booking",
+                },
+            } 
+        };
 
         this.agent = createReactAgent({
             llm,
@@ -51,15 +63,8 @@ export class FlightyAgent {
         try {
             console.log('Flighty Agent handling message:', message);
             const stream = await this.agent.stream(
-                { messages: [new HumanMessage(message.content)] },
-                {
-                    configurable: {
-                        thread_id: "Flighty_Agent",
-                        metadata: {
-                            agent_type: "flight-booking",
-                        },
-                    },
-                }
+                { messages: [new HumanMessage(message)] },
+                this.config
             );
 
             let response = "";

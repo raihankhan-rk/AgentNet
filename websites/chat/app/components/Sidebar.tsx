@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import Icons from '@/assets/Icons';
 import { useChat } from '../context/ChatContext';
 
 const Sidebar = () => {
@@ -8,13 +8,15 @@ const Sidebar = () => {
 
   return (
     <div className="w-1/4 flex flex-col bg-white p-4 relative z-10">
-      <h2 className="text-lg font-bold">Chats</h2>
-      <ul>
+      <div className="flex flex-row items-center justify-center gap-1 pb-2 border-b-[1px] border-[#E6E2FB] mb-2">
+        <Icons.fullLogo className="w-full h-7"/>
+      </div>
+      <ul className="flex flex-col gap-2">
         {rooms.map((room) => (
           <li
             key={room.id}
             onClick={() => switchRoom(room.id)}
-            className="cursor-pointer"
+            className="cursor-pointer bg-[#FFF1FB] w-full p-3 rounded-lg"
           >
             {room.name}
           </li>
@@ -23,7 +25,7 @@ const Sidebar = () => {
       <div className="flex-grow flex items-end">
         <button
           onClick={addRoom}
-          className="w-full p-2 bg-blue-500 text-white rounded mt-4"
+          className="w-full p-2 h-12 bg-gradient-to-br font-bold hover:text-[#7B88F9] from-[#C4CAFF] to-[#F8E1F9] text-white rounded mt-4"
         >
           New Chat
         </button>

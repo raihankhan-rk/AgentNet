@@ -41,7 +41,7 @@ export default function BookingModal({ flight, onClose, onSuccess }: BookingModa
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center">
+    <div className="fixed inset-0 bg-black bg-opacity-30 z-50 flex items-center justify-center">
       <div className="bg-white p-6 rounded-lg max-w-md w-full shadow-xl">
         <h2 className="text-xl font-bold mb-4 text-gray-900">Book Flight</h2>
         <p className="mb-4 text-gray-700">
