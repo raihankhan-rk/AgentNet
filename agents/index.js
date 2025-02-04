@@ -9,11 +9,9 @@ dotenv.config();
 
 async function main() {
     try {
-        // Create and initialize the protocol
         const protocol = new AgentNetworkProtocol();
         await protocol.initialize();
 
-        // Deploy Flighty Agent
         console.log('Initializing Flighty Agent...');
         const flightyAgent = new FlightyAgent({
             cdpWalletData: process.env.CDP_WALLET_DATA || "",
@@ -30,7 +28,6 @@ async function main() {
         });
         console.log('Flighty Agent deployed with peerId:', flightyDeployment.peerId);
 
-        // Deploy Airbnb Agent
         console.log('Initializing Airbnb Agent...');
         const airbnbAgent = new AirbnbAgent({
             model: "gpt-4o-mini",
@@ -45,16 +42,13 @@ async function main() {
         });
         console.log('Airbnb Agent deployed with peerId:', airbnbDeployment.peerId);
 
-        // Add delay before deploying Orchestrator
         await new Promise(resolve => setTimeout(resolve, 2000));
 
-        // Initialize Orchestrator Agent (but don't deploy/register it)
         const orchestratorAgent = new OrchestratorAgent({
             model: "gpt-4o-mini",
         }, protocol);
         await orchestratorAgent.initialize();
 
-        // Start chat interface
         const rl = readline.createInterface({
             input: process.stdin,
             output: process.stdout,
