@@ -5,7 +5,7 @@ const defaultHotels = {
         "id": "1",
         "name": "Sunset Resort",
         "description": "Beautiful beachfront resort with stunning views",
-        "price": 200,
+        "price": 0.002,
         "location": "Miami Beach",
         "availableDates": [],
         "bookings": [
@@ -23,7 +23,7 @@ const defaultHotels = {
         "id": "2",
         "name": "Mountain Lodge",
         "description": "Cozy mountain retreat with scenic views",
-        "price": 150,
+        "price": 0.001,
         "location": "Aspen",
         "availableDates": [],
         "bookings": [
@@ -41,7 +41,7 @@ const defaultHotels = {
         "id": "3",
         "name": "Urban Oasis Hotel",
         "description": "Modern luxury hotel in the heart of downtown",
-        "price": 280,
+        "price": 0.001,
         "location": "New York City",
         "availableDates": [
           "2025-03-15",
@@ -54,7 +54,7 @@ const defaultHotels = {
         "id": "4",
         "name": "Desert Palm Resort",
         "description": "Luxurious desert retreat with spa facilities",
-        "price": 320,
+        "price": 0.001,
         "location": "Phoenix",
         "availableDates": [
           "2025-03-18",
@@ -67,7 +67,7 @@ const defaultHotels = {
         "id": "5",
         "name": "Lakeside Inn",
         "description": "Peaceful lakefront property with water activities",
-        "price": 175,
+        "price": 0.001,
         "location": "Lake Tahoe",
         "availableDates": [
           "2025-03-22",
@@ -80,7 +80,7 @@ const defaultHotels = {
         "id": "6",
         "name": "Historic Downtown Hotel",
         "description": "Boutique hotel in a restored historic building",
-        "price": 190,
+        "price": 0.0043,
         "location": "Charleston",
         "availableDates": [
           "2025-03-25",
@@ -93,7 +93,7 @@ const defaultHotels = {
         "id": "7",
         "name": "Pacific View Resort",
         "description": "Oceanfront resort with private beach access",
-        "price": 450,
+        "price": 0.001,
         "location": "Maui",
         "availableDates": [
           "2025-03-28",
@@ -106,7 +106,7 @@ const defaultHotels = {
         "id": "8",
         "name": "Alpine Ski Lodge",
         "description": "Ski-in/ski-out lodge with mountain views",
-        "price": 280,
+        "price": 0.004,
         "location": "Vail",
         "availableDates": [
           "2025-04-01",
@@ -119,7 +119,7 @@ const defaultHotels = {
         "id": "9",
         "name": "City Lights Hotel",
         "description": "High-rise hotel with skyline views",
-        "price": 220,
+        "price": 0.001,
         "location": "Chicago",
         "availableDates": [
           "2025-04-04",
@@ -132,7 +132,7 @@ const defaultHotels = {
         "id": "10",
         "name": "Vineyard Estate",
         "description": "Luxury hotel surrounded by wine country",
-        "price": 400,
+        "price": 0.001,
         "location": "Napa Valley",
         "availableDates": [
           "2025-04-07",
@@ -145,7 +145,7 @@ const defaultHotels = {
         "id": "11",
         "name": "French Quarter Inn",
         "description": "Historic hotel with traditional charm",
-        "price": 240,
+        "price": 0.004,
         "location": "New Orleans",
         "availableDates": [
           "2025-04-10",
@@ -158,7 +158,7 @@ const defaultHotels = {
         "id": "12",
         "name": "Emerald Bay Resort",
         "description": "Tropical paradise with private lagoon",
-        "price": 520,
+        "price": 0.001,
         "location": "Bora Bora",
         "availableDates": [
           "2025-04-13",
@@ -171,7 +171,7 @@ const defaultHotels = {
         "id": "13",
         "name": "Metropolitan Suite Hotel",
         "description": "All-suite hotel with business amenities",
-        "price": 260,
+        "price": 0.002,
         "location": "Boston",
         "availableDates": [
           "2025-04-16",
@@ -184,7 +184,7 @@ const defaultHotels = {
         "id": "14",
         "name": "Ranch Resort",
         "description": "Western-style resort with horseback riding",
-        "price": 195,
+        "price": 0.002,
         "location": "Montana",
         "availableDates": [
           "2025-04-19",
@@ -197,7 +197,7 @@ const defaultHotels = {
         "id": "15",
         "name": "Coastal Breeze Hotel",
         "description": "Relaxed beachside hotel with water sports",
-        "price": 230,
+        "price": 0.001,
         "location": "San Diego",
         "availableDates": [
           "2025-04-22",
@@ -210,7 +210,7 @@ const defaultHotels = {
         "id": "16",
         "name": "Garden Court Hotel",
         "description": "Boutique hotel with landscaped gardens",
-        "price": 180,
+        "price": 0.001,
         "location": "Portland",
         "availableDates": [
           "2025-04-25",
@@ -223,7 +223,7 @@ const defaultHotels = {
         "id": "17",
         "name": "Island Paradise Resort",
         "description": "Luxury island resort with private villas",
-        "price": 600,
+        "price": 0.001,
         "location": "Maldives",
         "availableDates": [
           "2025-04-28",
@@ -236,7 +236,7 @@ const defaultHotels = {
         "id": "18",
         "name": "Snow Peak Lodge",
         "description": "Mountain resort with hot springs",
-        "price": 340,
+        "price": 0.001,
         "location": "Swiss Alps",
         "availableDates": [
           "2025-05-01",
@@ -249,7 +249,7 @@ const defaultHotels = {
         "id": "19",
         "name": "Harbor View Hotel",
         "description": "Waterfront hotel with marina access",
-        "price": 290,
+        "price": 0.001,
         "location": "Singapore",
         "availableDates": [
           "2025-03-24",
@@ -263,7 +263,7 @@ const defaultHotels = {
         "id": "19.5",
         "name": "Slutty Sea View Hotel",
         "description": "Waterfront hotel with marina access",
-        "price": 690,
+        "price": 0.001,
         "location": "Seattle",
         "availableDates": [
           "2025-05-04",
@@ -273,30 +273,13 @@ const defaultHotels = {
           "2025-05-08",
           "2025-05-09"
         ],
-        "bookings": [
-          {
-            "id": "ee4f775e-71a1-40ba-9137-c6a5b45f4410",
-            "userId": "user123",
-            "checkIn": "2025-02-04",
-            "checkOut": "2025-02-06",
-            "guests": 1,
-            "totalPrice": 1380
-          },
-          {
-            "id": "feb95b95-39db-45ae-9095-58d3ad859c99",
-            "userId": "user123",
-            "checkIn": "2025-02-19",
-            "checkOut": "2025-02-21",
-            "guests": 1,
-            "totalPrice": 1380
-          }
-        ]
+        "bookings": []
       },
       {
         "id": "20",
         "name": "Desert Oasis Resort",
         "description": "Luxury desert resort with golf course",
-        "price": 420,
+        "price": 0.003,
         "location": "Dubai",
         "availableDates": [
           "2025-05-07",
@@ -320,9 +303,8 @@ export async function getHotelById(id: string) {
 export async function bookHotel(hotelId: string, booking: any) {
   const hotel = hotels.get(hotelId);
   if (!hotel) throw new Error('Hotel not found');
-  
   // Add booking
-  hotel.bookings.push(booking);
+  hotel.bookings = [...hotel.bookings, booking];
   
   // Update available dates
   hotel.availableDates = hotel.availableDates.filter((date: string) => 
