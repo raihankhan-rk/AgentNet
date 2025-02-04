@@ -10,7 +10,6 @@ export default function Home() {
   return (
     <ChatProvider>
       <div className="flex h-screen w-screen overflow-hidden relative">
-          <WalletComponents/>
           <AnimatedOrbs />  
        
         <Sidebar />
