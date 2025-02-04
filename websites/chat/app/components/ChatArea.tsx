@@ -33,8 +33,8 @@ const ChatArea = () => {
             <div
               className={`max-w-[70%] rounded-lg p-3 ${
                 message.type === 'user'
-                  ? 'bg-[#7392b2] text-white ml-auto'
-                  : 'bg-blue-100 text-gray-800 mr-auto'
+                  ? 'bg-[#C4CAFF] backdrop-blur-sm border-[1px] border-white text-black ml-auto'
+                  : 'bg-white/50 backdrop-blur-sm border-[1px] border-white text-black shadow mr-auto'
               }`}
             >
               {message.content}

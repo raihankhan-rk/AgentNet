@@ -25,7 +25,7 @@ const Sidebar = () => {
       <div className="flex-grow flex items-end">
         <button
           onClick={addRoom}
-          className="w-full p-2 bg-gradient-to-br from-[#C4CAFF] to-[#F8E1F9] text-white rounded mt-4"
+          className="w-full p-2 h-12 bg-gradient-to-br font-bold hover:text-[#7B88F9] from-[#C4CAFF] to-[#F8E1F9] text-white rounded mt-4"
         >
           New Chat
         </button>

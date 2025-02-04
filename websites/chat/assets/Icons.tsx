@@ -22,10 +22,10 @@ const FullIcon = ({ className }: { className?: string }) => (
 );
 
 const SendIcon = ({ className }: { className?: string }) => (
-  <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M12 2L2 22h20L12 2Z" stroke="#C4CAFF" stroke-width="2" stroke-linejoin="round"/>
-    <path d="M12 2L2 22h20L12 2Z" stroke="#C4CAFF" stroke-width="2" stroke-linejoin="round"/>
+  <svg className={className} width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M27.1073 13.5957L0.966654 0.489481C0.860404 0.436356 0.738529 0.423856 0.622904 0.451981C0.494577 0.483706 0.38405 0.564987 0.315522 0.678028C0.246995 0.791069 0.226052 0.926657 0.257279 1.05511L2.95103 12.0614C2.99165 12.227 3.11353 12.3614 3.27603 12.4145L7.89165 13.9989L3.27915 15.5832C3.11665 15.6395 2.99478 15.7707 2.95728 15.9364L0.257279 26.9582C0.229154 27.0739 0.241654 27.1957 0.294779 27.2989C0.416654 27.5457 0.716654 27.6457 0.966654 27.5239L27.1073 14.4926C27.2042 14.4457 27.2823 14.3645 27.3323 14.2707C27.4542 14.0207 27.3542 13.7207 27.1073 13.5957Z" fill="currentColor"/>
   </svg>
+
 );
 
 export default Icons;
