@@ -1,17 +1,15 @@
 import { NextResponse } from 'next/server';
-import fs from 'fs';
-import path from 'path';
+import { getHotelById } from '@/services/hotelService';
 
 export async function GET(request: Request) {
   try {
     // Get hotelId from URL
     const hotelId = request.url.split('/').pop();
+    if (!hotelId) {
+      return NextResponse.json({ error: 'Invalid hotel ID' }, { status: 400 });
+    }
     
-    const filePath = path.join(process.cwd(), 'data', 'hotels.json');
-    const fileContents = fs.readFileSync(filePath, 'utf8');
-    const data = JSON.parse(fileContents);
-
-    const hotel = data.hotels.find((h: any) => h.id === hotelId);
+    const hotel = await getHotelById(hotelId);
     
     if (!hotel) {
       return NextResponse.json({ error: 'Hotel not found' }, { status: 404 });

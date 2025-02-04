@@ -1,5 +1,5 @@
-import hotelsData from "@/data/hotels.json";
 import { NextResponse } from "next/server";
+import { getAllHotels } from '@/services/hotelService';
 
 const DATE_RANGE_BUFFER = 3; // Number of days to check before and after
 
@@ -22,8 +22,8 @@ export async function GET(request: Request) {
   const checkOut = searchParams.get("checkOut");
   const occupants = searchParams.get("occupants");
 
-  // Use the hotels data from the JSON file
-  const hotels = hotelsData.hotels;
+  // Get hotels from service
+  const hotels = await getAllHotels();
 
   // First filter by place if provided
   let filteredHotels = hotels;

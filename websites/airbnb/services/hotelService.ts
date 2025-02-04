@@ -334,3 +334,9 @@ export async function bookHotel(hotelId: string, booking: any) {
   
   return booking;
 }
+
+export const getAllHotels = async () => {
+  // Implementation here
+  return Array.from(hotels.values());
+  return []; // Replace with actual implementation
+};
