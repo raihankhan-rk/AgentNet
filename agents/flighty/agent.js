@@ -1,57 +1,29 @@
-import { CdpAgentkit } from "@coinbase/cdp-agentkit-core";
-import { CdpToolkit } from "@coinbase/cdp-langchain";
-import { MemorySaver } from "@langchain/langgraph";
-import { createReactAgent } from "@langchain/langgraph/prebuilt";
-import { ChatOpenAI } from "@langchain/openai";
 import { HumanMessage } from "@langchain/core/messages";
-import { createFlightSearchTool, createGetBookingsTool, createBookFlightTool } from "./tools.js";
 import { FLIGHTY_SYSTEM_PROMPT } from "./prompts.js";
+import { createFlightSearchTool, createBookFlightTool, createGetBookingsTool } from "./tools.js";
 
 export class FlightyAgent {
-    constructor(agentConfig) {
-        this.agentConfig = agentConfig;
-        this.agent = null;
-        this.config = null;
-    }
-
-    async initialize() {
-        const llm = new ChatOpenAI({
-            model: this.agentConfig.model || "gpt-4o-mini",
-        });
-
-        // Initialize CDP AgentKit
-        const agentkit = await CdpAgentkit.configureWithWallet({
-            cdpWalletData: this.agentConfig.cdpWalletData,
-            networkId: this.agentConfig.networkId,
-        });
-
-        // Setup tools
-        const cdpToolkit = new CdpToolkit(agentkit);
-        const cdpTools = cdpToolkit.getTools();
-        const customTools = [
+    static getTools() {
+        return [
             createFlightSearchTool(),
-            createGetBookingsTool(),
-            createBookFlightTool()
+            createBookFlightTool(),
+            createGetBookingsTool()
         ];
-        const tools = [...cdpTools, ...customTools];
-
-        // Create agent
-        const memory = new MemorySaver();
-        this.config = { configurable: { thread_id: "Flighty Agent" } };
-
-        this.agent = createReactAgent({
-            llm,
-            tools,
-            checkpointSaver: memory,
-            messageModifier: this.agentConfig.systemPrompt || FLIGHTY_SYSTEM_PROMPT,
-        });
     }
 
-    async handleMessage(message) {
+    static get systemPrompt() {
+        return FLIGHTY_SYSTEM_PROMPT;
+    }
+
+    static async handleMessage(agent, message) {
         try {
             console.log('Flighty Agent handling message:', message);
-            const stream = await this.agent.stream(
-                { messages: [new HumanMessage(message.content)] },
+            
+            // Create a simple HumanMessage with just the text content
+            const humanMessage = new HumanMessage(message);
+
+            const stream = await agent.stream(
+                { messages: [humanMessage] },
                 {
                     configurable: {
                         thread_id: "Flighty_Agent",
@@ -85,19 +57,5 @@ export class FlightyAgent {
                 }`,
             };
         }
-    }
-
-    getAgent() {
-        if (!this.agent) {
-            throw new Error('Agent not initialized. Call initialize() first.');
-        }
-        return this.agent;
-    }
-
-    getConfig() {
-        if (!this.config) {
-            throw new Error('Agent not initialized. Call initialize() first.');
-        }
-        return this.config;
     }
 }

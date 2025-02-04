@@ -1,5 +1,10 @@
 import { gossipsub } from "@chainsafe/libp2p-gossipsub";
 import { yamux } from "@chainsafe/libp2p-yamux";
+import { CdpAgentkit } from "@coinbase/cdp-agentkit-core";
+import { CdpToolkit } from "@coinbase/cdp-langchain";
+import { MemorySaver } from "@langchain/langgraph";
+import { createReactAgent } from "@langchain/langgraph/prebuilt";
+import { ChatOpenAI } from "@langchain/openai";
 import { identify } from '@libp2p/identify';
 import { kadDHT } from '@libp2p/kad-dht';
 import { noise } from "@libp2p/noise";
@@ -12,7 +17,9 @@ export default class AgentNetworkProtocol {
         this.registrarUrl = 'http://localhost:3000';
         this.messageHandlers = new Map();
         this.pendingResponses = new Map();
-        this.nodes = new Map(); // Store multiple nodes
+        this.nodes = new Map();
+        this.agentBuilders = new Map();
+        this.ephemeralNodes = new Map();
     }
 
     async initialize() {
@@ -44,7 +51,7 @@ export default class AgentNetworkProtocol {
 
     async createNode() {
         const port = Math.floor(Math.random() * (65535 - 1024) + 1024);
-        
+
         const nodeConfig = {
             ...this.baseConfig,
             addresses: {
@@ -55,14 +62,11 @@ export default class AgentNetworkProtocol {
         const node = await createLibp2p(nodeConfig);
         await node.start();
 
-        // Wait for node to be ready
         await new Promise(resolve => setTimeout(resolve, 1000));
 
-        // Subscribe to messages for this node
         const topic = `/agent/${node.peerId.toString()}`;
         await node.services.pubsub.subscribe(topic);
-        
-        // Set up message handler
+
         node.services.pubsub.addEventListener('message', (evt) => {
             if (evt.detail.topic === topic) {
                 this.handleIncomingMessage(evt.detail);
@@ -83,20 +87,16 @@ export default class AgentNetworkProtocol {
             throw new Error('Missing required agent metadata');
         }
 
-        // Create a new node for this agent
         const node = await this.createNode();
         const peerId = node.peerId.toString();
-        
-        // Store the node
+
         this.nodes.set(peerId, node);
 
-        // Register message handler for this agent
         this.messageHandlers.set(peerId, async (message) => {
             const response = await agentInstance.handleMessage(message);
             return response;
         });
 
-        // Register the agent with the network
         try {
             await this._registerAgent({
                 peerId,
@@ -105,15 +105,12 @@ export default class AgentNetworkProtocol {
                 capabilities
             });
             console.log('Successfully registered agent:', name, 'with peerId:', peerId);
-            
-            // Wait a moment before connecting nodes
+
             await new Promise(resolve => setTimeout(resolve, 1000));
-            
-            // Connect this node to other nodes
+
             await this.connectNodes();
-            
+
         } catch (error) {
-            // Clean up on failure
             await node.stop();
             this.nodes.delete(peerId);
             this.messageHandlers.delete(peerId);
@@ -159,8 +156,7 @@ export default class AgentNetworkProtocol {
         try {
             const topic = `/agent/${targetPeerId}`;
             console.log('Publishing to topic:', topic);
-            
-            // Create promise before sending message
+
             const responsePromise = new Promise((resolve, reject) => {
                 const timeoutId = setTimeout(() => {
                     this.pendingResponses.delete(senderNode.peerId.toString());
@@ -175,13 +171,11 @@ export default class AgentNetworkProtocol {
                 });
             });
 
-            // Ensure subscription
             if (!senderNode.services.pubsub.getTopics().includes(topic)) {
                 await senderNode.services.pubsub.subscribe(topic);
                 await new Promise(resolve => setTimeout(resolve, 1000));
             }
 
-            // Send message
             const messageData = JSON.stringify({
                 to: targetPeerId,
                 from: senderNode.peerId.toString(),
@@ -195,7 +189,6 @@ export default class AgentNetworkProtocol {
             );
             console.log('Message published successfully');
 
-            // Wait for response
             return await responsePromise;
 
         } catch (error) {
@@ -211,8 +204,7 @@ export default class AgentNetworkProtocol {
             console.log('Message data:', data);
             console.log('Registered handlers:', Array.from(this.messageHandlers.keys()));
             console.log('Pending responses:', Array.from(this.pendingResponses.keys()));
-            
-            // Fast-path for responses
+
             if (data.isResponse) {
                 console.log('Processing response message');
                 const resolver = this.pendingResponses.get(data.to);
@@ -225,8 +217,7 @@ export default class AgentNetworkProtocol {
                 }
                 return;
             }
-            
-            // Handle new requests
+
             console.log('Processing new request');
             const handler = this.messageHandlers.get(data.to);
             if (handler) {
@@ -245,7 +236,6 @@ export default class AgentNetworkProtocol {
                         return;
                     }
 
-                    // Ensure response has isResponse flag
                     const responseData = {
                         to: data.from,
                         from: data.to,
@@ -263,7 +253,6 @@ export default class AgentNetworkProtocol {
                     console.log('Response sent successfully');
                 } catch (error) {
                     console.error('Error processing message:', error);
-                    // Send error response back
                     const errorResponse = {
                         to: data.from,
                         from: data.to,
@@ -300,7 +289,10 @@ export default class AgentNetworkProtocol {
     }
 
     async stop() {
-        // Stop all nodes
+        for (const [sessionId] of this.ephemeralNodes) {
+            await this.destroyEphemeralNode(sessionId);
+        }
+
         for (const [peerId, node] of this.nodes) {
             await node.stop();
             this.nodes.delete(peerId);
@@ -308,19 +300,16 @@ export default class AgentNetworkProtocol {
         }
     }
 
-    // Add this new method to establish connections between nodes
     async connectNodes() {
         const connectedPeers = new Set();
-        
+
         for (const [peerId, node] of this.nodes) {
             for (const [otherPeerId, otherNode] of this.nodes) {
                 if (peerId !== otherPeerId && !connectedPeers.has(`${peerId}-${otherPeerId}`)) {
                     try {
-                        // Subscribe to each other's topics before attempting connection
                         const topic = `/agent/${otherPeerId}`;
                         await node.services.pubsub.subscribe(topic);
-                        
-                        // Attempt to connect with retry
+
                         let connected = false;
                         let attempts = 0;
                         while (!connected && attempts < 3) {
@@ -333,16 +322,101 @@ export default class AgentNetworkProtocol {
                                 await new Promise(resolve => setTimeout(resolve, 1000));
                             }
                         }
-                        
-                        // Mark this pair as connected
+
                         connectedPeers.add(`${peerId}-${otherPeerId}`);
                         connectedPeers.add(`${otherPeerId}-${peerId}`);
-                        
+
                     } catch (error) {
                         console.error(`Failed to connect ${peerId} to ${otherPeerId}:`, error.message);
                     }
                 }
             }
         }
+    }
+
+    registerAgentBuilder(agentType, builderConfig) {
+        this.agentBuilders.set(agentType, builderConfig);
+    }
+
+    async createAndDeployCdpAgent(agentType, options = {}) {
+        const builderConfig = this.agentBuilders.get(agentType);
+        if (!builderConfig) {
+            throw new Error(`No agent builder registered for type: ${agentType}`);
+        }
+
+        const cdpAgentkit = await CdpAgentkit.configureWithWallet({
+            cdpWalletData: options.cdpWalletData || "",
+            networkId: options.networkId || "base-sepolia",
+        });
+
+        const llm = new ChatOpenAI({
+            model: options.model || "gpt-4o-mini",
+        });
+
+        const cdpToolkit = new CdpToolkit(cdpAgentkit);
+        const cdpTools = cdpToolkit.getTools();
+
+        const customTools = builderConfig.getTools();
+        const tools = [...cdpTools, ...customTools];
+
+        const memory = new MemorySaver();
+        const agent = createReactAgent({
+            llm,
+            tools,
+            checkpointSaver: memory,
+            messageModifier: builderConfig.systemPrompt,
+        });
+
+        const agentWrapper = {
+            handleMessage: async (message) => {
+                return await builderConfig.handleMessage(agent, message);
+            },
+            agent,
+            config: { configurable: { thread_id: `${agentType}_Agent` } }
+        };
+
+        console.log('Deploying CDP Agent...');
+        const deployment = await this.deployAgent(agentWrapper, {
+            name: options.name,
+            description: options.description,
+            capabilities: options.capabilities,
+        });
+
+        return deployment;
+    }
+
+    async createEphemeralNode(sessionId) {
+        console.log(`\n[DEBUG] Creating ephemeral node for session: ${sessionId}`);
+        const node = await this.createNode();
+        const peerId = node.peerId.toString();
+
+        this.ephemeralNodes.set(sessionId, {
+            node,
+            peerId,
+            createdAt: Date.now()
+        });
+
+        this.nodes.set(peerId, node);
+
+        console.log(`[DEBUG] Ephemeral node created with peerId: ${peerId}`);
+        return peerId;
+    }
+
+    async destroyEphemeralNode(sessionId) {
+        const ephemeralData = this.ephemeralNodes.get(sessionId);
+        if (ephemeralData) {
+            const { node, peerId } = ephemeralData;
+            console.log(`\n[DEBUG] Cleaning up ephemeral node for session: ${sessionId}`);
+
+            this.nodes.delete(peerId);
+            this.ephemeralNodes.delete(sessionId);
+            await node.stop();
+
+            console.log(`[DEBUG] Ephemeral node ${peerId} destroyed`);
+        }
+    }
+
+    getEphemeralNode(sessionId) {
+        return this.ephemeralNodes.get(sessionId)?.node || null;
     }
 }

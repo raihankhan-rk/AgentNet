@@ -1,50 +1,35 @@
-import { CdpAgentkit } from "@coinbase/cdp-agentkit-core";
-import { CdpToolkit } from "@coinbase/cdp-langchain";
-import { MemorySaver } from "@langchain/langgraph";
-import { createReactAgent } from "@langchain/langgraph/prebuilt";
-import { ChatOpenAI } from "@langchain/openai";
 import { HumanMessage } from "@langchain/core/messages";
-import { createSearchHotelsTool, createGetHotelDetailsTool, createBookHotelTool, createGetBookingsTool } from "./tools.js";
 import { AIRBNB_SYSTEM_PROMPT } from "./prompts.js";
+import { createSearchHotelsTool, createGetHotelDetailsTool, createBookHotelTool, createGetBookingsTool } from "./tools.js";
 
 export class AirbnbAgent {
-    constructor(config) {
-        this.config = config;
-        this.agent = null;
-        this.memory = new MemorySaver();
-    }
-
-    async initialize() {
-        const llm = new ChatOpenAI({
-            model: this.config.model || "gpt-4o-mini",
-            temperature: 0.7,
-        });
-
-        const tools = [
+    static getTools() {
+        return [
             createSearchHotelsTool(),
             createGetHotelDetailsTool(),
             createBookHotelTool(),
             createGetBookingsTool()
         ];
-
-        this.agent = createReactAgent({
-            llm,
-            tools,
-            checkpointSaver: this.memory,
-            messageModifier: AIRBNB_SYSTEM_PROMPT,
-        });
     }
 
-    async handleMessage(message) {
+    static get systemPrompt() {
+        return AIRBNB_SYSTEM_PROMPT;
+    }
+
+    static async handleMessage(agent, message) {
         try {
             console.log('Airbnb Agent handling message:', message);
-            const stream = await this.agent.stream(
-                { messages: [new HumanMessage(message.content)] },
+            
+            // Create a simple HumanMessage with just the text content
+            const humanMessage = new HumanMessage(message);
+
+            const stream = await agent.stream(
+                { messages: [humanMessage] },
                 {
                     configurable: {
                         thread_id: "Airbnb_Agent",
                         metadata: {
-                            agent_type: "accommodation",
+                            agent_type: "accommodation-booking",
                         },
                     },
                 }
