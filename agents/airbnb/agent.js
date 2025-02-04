@@ -16,15 +16,20 @@ export class AirbnbAgent {
 
     async initialize() {
         const llm = new ChatOpenAI({
-            model: this.agentConfig.model || "gpt-4o-mini",
+            model: "gpt-4o-mini",
             temperature: 0.7,
         });
 
         // Initialize CDP AgentKit
         const agentkit = await CdpAgentkit.configureWithWallet({
-            cdpWalletData: this.agentConfig.cdpWalletData || "",
+            cdpWalletData: process.env.CDP_WALLET_DATA || "",
             networkId: this.agentConfig.networkId || "base-sepolia",
         });
+
+        this.agentConfig = {
+            ...this.agentConfig,
+            walletAddress: JSON.parse(process.env.CDP_WALLET_DATA).defaultAddressId
+        }
 
         // Setup tools
         const cdpToolkit = new CdpToolkit(agentkit);
@@ -39,13 +44,13 @@ export class AirbnbAgent {
 
         // Create agent
         const memory = new MemorySaver();
-        this.config = { 
-            configurable: { 
+        this.config = {
+            configurable: {
                 thread_id: "Airbnb_Agent",
                 metadata: {
                     agent_type: "accommodation-booking",
                 },
-            } 
+            }
         };
 
         this.agent = createReactAgent({
@@ -82,9 +87,8 @@ export class AirbnbAgent {
             console.error('Airbnb Agent error:', error);
             return {
                 type: "error",
-                content: `Error processing request: ${
-                    error instanceof Error ? error.message : "Unknown error"
-                }`,
+                content: `Error processing request: ${error instanceof Error ? error.message : "Unknown error"
+                    }`,
             };
         }
     }

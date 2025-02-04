@@ -14,7 +14,6 @@ async function main() {
 
         console.log('Initializing Flighty Agent...');
         const flightyAgent = new FlightyAgent({
-            cdpWalletData: process.env.CDP_WALLET_DATA || "",
             networkId: process.env.NETWORK_ID || "base-sepolia",
             model: "gpt-4o-mini",
         });
@@ -25,6 +24,7 @@ async function main() {
             name: "Flighty Travel Assistant",
             description: "An AI agent that helps users search and book flights",
             capabilities: ["flight-booking"],
+            walletAddress: flightyAgent.agentConfig.walletAddress
         });
         console.log('Flighty Agent deployed with peerId:', flightyDeployment.peerId);
 
@@ -39,6 +39,7 @@ async function main() {
             name: "Airbnb Accommodation Assistant",
             description: "An AI agent that helps users search and book accommodations",
             capabilities: ["accommodation-booking"],
+            walletAddress: airbnbAgent.agentConfig.walletAddress
         });
         console.log('Airbnb Agent deployed with peerId:', airbnbDeployment.peerId);
 

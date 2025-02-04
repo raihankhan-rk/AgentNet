@@ -145,3 +145,48 @@ export function createAgentDiscoveryTool(protocol) {
     },
   });
 }
+
+export function createAgentWalletTool(protocol) {
+  return new DynamicStructuredTool({
+    name: "get_agent_wallet",
+    description: "Get the wallet address for a specific agent capability (e.g., flight-booking, accommodation-booking)",
+    schema: z.object({
+      capability: z.string().describe("The capability to search for (e.g., 'flight-booking', 'accommodation-booking')"),
+    }),
+    func: async ({ capability }) => {
+        console.log("invoking `get_agent_wallet` with capability ", capability)
+      try {
+        const agents = await protocol.findAgentsByCapability(capability.trim().toLowerCase());
+        
+        if (agents.length === 0) {
+          return JSON.stringify({
+            type: 'error',
+            content: `No agents found with capability: ${capability}`
+          });
+        }
+
+        const agent = agents[0];
+        if (!agent.walletAddress) {
+          return JSON.stringify({
+            type: 'error',
+            content: `No wallet address available for agent with capability: ${capability}`
+          });
+        }
+
+        return JSON.stringify({
+          type: 'success',
+          content: {
+            capability,
+            agentName: agent.name,
+            walletAddress: agent.walletAddress
+          }
+        });
+      } catch (error) {
+        return JSON.stringify({
+          type: 'error',
+          content: `Error getting agent wallet: ${error instanceof Error ? error.message : 'Unknown error'}`
+        });
+      }
+    },
+  });
+}

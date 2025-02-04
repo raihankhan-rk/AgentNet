@@ -20,11 +20,15 @@ export class FlightyAgent {
             temperature: 0.7,
         });
 
-        // Initialize CDP AgentKit
         const agentkit = await CdpAgentkit.configureWithWallet({
-            cdpWalletData: this.agentConfig.cdpWalletData || "",
+            cdpWalletData: process.env.CDP_WALLET_DATA || "",
             networkId: this.agentConfig.networkId || "base-sepolia",
         });
+
+        this.agentConfig = {
+            ...this.agentConfig,
+            walletAddress: JSON.parse(process.env.CDP_WALLET_DATA).defaultAddressId
+        }
 
         // Setup tools
         const cdpToolkit = new CdpToolkit(agentkit);

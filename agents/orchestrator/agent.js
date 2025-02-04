@@ -4,7 +4,7 @@ import { MemorySaver } from "@langchain/langgraph";
 import { createReactAgent } from "@langchain/langgraph/prebuilt";
 import { ChatOpenAI } from "@langchain/openai";
 import { DEFAULT_SYSTEM_PROMPT } from "./prompts.js";
-import { createAgentCommunicationTool, createAgentDiscoveryTool, createMultiAgentCommunicationTool } from "./tools.js";
+import { createAgentCommunicationTool, createAgentDiscoveryTool, createMultiAgentCommunicationTool, createAgentWalletTool } from "./tools.js";
 
 export class OrchestratorAgent {
     constructor(config, protocol) {
@@ -39,6 +39,7 @@ export class OrchestratorAgent {
             createAgentCommunicationTool(this.protocol),
             createMultiAgentCommunicationTool(this.protocol),
             createAgentDiscoveryTool(this.protocol),
+            createAgentWalletTool(this.protocol)
         ];
 
         this.agent = createReactAgent({
