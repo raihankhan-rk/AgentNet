@@ -5,7 +5,7 @@ import { MemorySaver } from "@langchain/langgraph";
 import { createReactAgent } from "@langchain/langgraph/prebuilt";
 import { ChatOpenAI } from "@langchain/openai";
 import { FLIGHTY_SYSTEM_PROMPT } from "./prompts.js";
-import { createBookFlightTool, createFlightSearchTool, createGetBookingsTool } from "./tools.js";
+import { createBookFlightTool, createFlightSearchTool, createGetBookingsTool, createTransactionVerificationTool } from "./tools.js";
 
 export class FlightyAgent {
     constructor(agentConfig) {
@@ -38,7 +38,8 @@ export class FlightyAgent {
         const customTools = [
             createFlightSearchTool(),
             createGetBookingsTool(),
-            createBookFlightTool()
+            createBookFlightTool(),
+            createTransactionVerificationTool()
         ];
         const tools = [...cdpTools, ...customTools];
 

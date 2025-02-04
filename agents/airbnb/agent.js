@@ -5,7 +5,7 @@ import { MemorySaver } from "@langchain/langgraph";
 import { createReactAgent } from "@langchain/langgraph/prebuilt";
 import { ChatOpenAI } from "@langchain/openai";
 import { AIRBNB_SYSTEM_PROMPT } from "./prompts.js";
-import { createBookHotelTool, createGetBookingsTool, createGetHotelDetailsTool, createSearchHotelsTool } from "./tools.js";
+import { createBookHotelTool, createGetBookingsTool, createGetHotelDetailsTool, createSearchHotelsTool, createTransactionVerificationTool } from "./tools.js";
 
 export class AirbnbAgent {
     constructor(agentConfig) {
@@ -41,7 +41,8 @@ export class AirbnbAgent {
             createSearchHotelsTool(),
             createGetHotelDetailsTool(),
             createBookHotelTool(),
-            createGetBookingsTool()
+            createGetBookingsTool(),
+            createTransactionVerificationTool()
         ];
         const tools = [...cdpTools, ...customTools];
 

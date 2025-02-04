@@ -94,3 +94,44 @@ export function createBookFlightTool() {
     },
   });
 }
+
+export function createTransactionVerificationTool() {
+  return new DynamicStructuredTool({
+      name: "verify_payment",
+      description: "Verify if a payment was successful using the transaction hash",
+      schema: z.object({
+          txHash: z.string().describe("The transaction hash to verify"),
+      }),
+      func: async ({ txHash }) => {
+          try {
+              const response = await fetch(
+                  `https://api-sepolia.basescan.org/api?module=transaction&action=getstatus&txhash=${txHash}&apikey=W4355Z3SH791XK4JPPFX5VPW1JK9XKUYBV`
+              );
+              
+              if (!response.ok) {
+                  throw new Error(`API request failed with status ${response.status}`);
+              }
+              
+              const data = await response.json();
+              const isError = data.result.isError;
+              const isVerified = isError === "0";
+              
+              console.log(`Payment verification ${isVerified ? 'successful' : 'failed'} for transaction ${txHash}`);
+              
+              return JSON.stringify({
+                  type: isVerified ? "success" : "error", 
+                  content: {
+                      verified: isVerified,
+                      message: isVerified ? "Transaction successful" : "Transaction failed"
+                  }
+              });
+          } catch (error) {
+              console.log(`Payment verification failed with error: ${error.message}`);
+              return JSON.stringify({
+                  type: "error",
+                  content: `Error verifying transaction: ${error.message}`
+              });
+          }
+      }
+  });
+}
