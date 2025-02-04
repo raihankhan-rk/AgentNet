@@ -44,7 +44,7 @@ export default class AgentNetworkProtocol {
 
     async createNode() {
         const port = Math.floor(Math.random() * (65535 - 1024) + 1024);
-        
+
         const nodeConfig = {
             ...this.baseConfig,
             addresses: {
@@ -61,7 +61,7 @@ export default class AgentNetworkProtocol {
         // Subscribe to messages for this node
         const topic = `/agent/${node.peerId.toString()}`;
         await node.services.pubsub.subscribe(topic);
-        
+
         // Set up message handler
         node.services.pubsub.addEventListener('message', (evt) => {
             if (evt.detail.topic === topic) {
@@ -86,7 +86,7 @@ export default class AgentNetworkProtocol {
         // Create a new node for this agent
         const node = await this.createNode();
         const peerId = node.peerId.toString();
-        
+
         // Store the node
         this.nodes.set(peerId, node);
 
@@ -105,13 +105,13 @@ export default class AgentNetworkProtocol {
                 capabilities
             });
             console.log('Successfully registered agent:', name, 'with peerId:', peerId);
-            
+
             // Wait a moment before connecting nodes
             await new Promise(resolve => setTimeout(resolve, 1000));
-            
+
             // Connect this node to other nodes
             await this.connectNodes();
-            
+
         } catch (error) {
             // Clean up on failure
             await node.stop();
@@ -159,7 +159,7 @@ export default class AgentNetworkProtocol {
         try {
             const topic = `/agent/${targetPeerId}`;
             console.log('Publishing to topic:', topic);
-            
+
             // Create promise before sending message
             const responsePromise = new Promise((resolve, reject) => {
                 const timeoutId = setTimeout(() => {
@@ -211,7 +211,7 @@ export default class AgentNetworkProtocol {
             console.log('Message data:', data);
             console.log('Registered handlers:', Array.from(this.messageHandlers.keys()));
             console.log('Pending responses:', Array.from(this.pendingResponses.keys()));
-            
+
             // Fast-path for responses
             if (data.isResponse) {
                 console.log('Processing response message');
@@ -225,7 +225,7 @@ export default class AgentNetworkProtocol {
                 }
                 return;
             }
-            
+
             // Handle new requests
             console.log('Processing new request');
             const handler = this.messageHandlers.get(data.to);
@@ -308,10 +308,9 @@ export default class AgentNetworkProtocol {
         }
     }
 
-    // Add this new method to establish connections between nodes
     async connectNodes() {
         const connectedPeers = new Set();
-        
+
         for (const [peerId, node] of this.nodes) {
             for (const [otherPeerId, otherNode] of this.nodes) {
                 if (peerId !== otherPeerId && !connectedPeers.has(`${peerId}-${otherPeerId}`)) {
@@ -319,7 +318,7 @@ export default class AgentNetworkProtocol {
                         // Subscribe to each other's topics before attempting connection
                         const topic = `/agent/${otherPeerId}`;
                         await node.services.pubsub.subscribe(topic);
-                        
+
                         // Attempt to connect with retry
                         let connected = false;
                         let attempts = 0;
@@ -333,11 +332,11 @@ export default class AgentNetworkProtocol {
                                 await new Promise(resolve => setTimeout(resolve, 1000));
                             }
                         }
-                        
+
                         // Mark this pair as connected
                         connectedPeers.add(`${peerId}-${otherPeerId}`);
                         connectedPeers.add(`${otherPeerId}-${peerId}`);
-                        
+
                     } catch (error) {
                         console.error(`Failed to connect ${peerId} to ${otherPeerId}:`, error.message);
                     }
