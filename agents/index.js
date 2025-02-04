@@ -4,18 +4,28 @@ import AgentNetworkProtocol from "../agent-network-protocol/index.js";
 import { AirbnbAgent } from "./airbnb/agent.js";
 import { FlightyAgent } from "./flighty/agent.js";
 import { OrchestratorAgent } from "./orchestrator/agent.js";
+import { loadEnvFromFolder } from "./utils/loadEnv.js";
+import path from "path";
 
 dotenv.config();
 
 async function main() {
     try {
+        // Load root .env first (for shared variables)
+        loadEnvFromFolder(process.cwd());
+        
+        // Load agent-specific .env files
+        const flightyEnv = loadEnvFromFolder(path.join(process.cwd(), 'flighty'));
+        const airbnbEnv = loadEnvFromFolder(path.join(process.cwd(), 'airbnb'));
+
         const protocol = new AgentNetworkProtocol();
         await protocol.initialize();
 
         console.log('Initializing Flighty Agent...');
         const flightyAgent = new FlightyAgent({
-            networkId: process.env.NETWORK_ID || "base-sepolia",
+            networkId: flightyEnv.NETWORK_ID || process.env.NETWORK_ID || "base-sepolia",
             model: "gpt-4o-mini",
+            cdpWalletData: flightyEnv.CDP_WALLET_DATA,
         });
         await flightyAgent.initialize();
 
@@ -31,6 +41,8 @@ async function main() {
         console.log('Initializing Airbnb Agent...');
         const airbnbAgent = new AirbnbAgent({
             model: "gpt-4o-mini",
+            cdpWalletData: airbnbEnv.CDP_WALLET_DATA,
+            networkId: airbnbEnv.NETWORK_ID || process.env.NETWORK_ID || "base-sepolia",
         });
         await airbnbAgent.initialize();
 

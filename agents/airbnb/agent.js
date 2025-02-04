@@ -20,15 +20,18 @@ export class AirbnbAgent {
             temperature: 0.7,
         });
 
-        // Initialize CDP AgentKit
+        // Initialize CDP AgentKit with the wallet data from config
         const agentkit = await CdpAgentkit.configureWithWallet({
-            cdpWalletData: process.env.CDP_WALLET_DATA || "",
+            cdpWalletData: this.agentConfig.cdpWalletData || "",
             networkId: this.agentConfig.networkId || "base-sepolia",
         });
 
+        // Update wallet address from the provided config
         this.agentConfig = {
             ...this.agentConfig,
-            walletAddress: JSON.parse(process.env.CDP_WALLET_DATA).defaultAddressId
+            walletAddress: this.agentConfig.cdpWalletData ? 
+                JSON.parse(this.agentConfig.cdpWalletData).defaultAddressId :
+                undefined
         }
 
         // Setup tools

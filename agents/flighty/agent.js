@@ -21,13 +21,15 @@ export class FlightyAgent {
         });
 
         const agentkit = await CdpAgentkit.configureWithWallet({
-            cdpWalletData: process.env.CDP_WALLET_DATA || "",
+            cdpWalletData: this.agentConfig.cdpWalletData || "",
             networkId: this.agentConfig.networkId || "base-sepolia",
         });
 
         this.agentConfig = {
             ...this.agentConfig,
-            walletAddress: JSON.parse(process.env.CDP_WALLET_DATA).defaultAddressId
+            walletAddress: this.agentConfig.cdpWalletData ? 
+                JSON.parse(this.agentConfig.cdpWalletData).defaultAddressId :
+                undefined
         }
 
         // Setup tools

@@ -2,11 +2,13 @@ import dotenv from "dotenv";
 import * as readline from "readline";
 import AgentNetworkProtocol from "../../agent-network-protocol/index.js";
 import { FlightyAgent } from "./agent.js";
+import { getAgentEnv } from "../utils/loadEnv.js";
 
 dotenv.config();
 
 async function main() {
     const localMode = process.argv.includes("--local");
+    const agentEnv = getAgentEnv();
     
     try {
         // Create and initialize the protocol
@@ -16,8 +18,8 @@ async function main() {
         // Initialize Flighty Agent
         console.log('Initializing Flighty Agent...');
         const flightyAgent = new FlightyAgent({
-            cdpWalletData: process.env.CDP_WALLET_DATA || "",
-            networkId: process.env.NETWORK_ID || "base-sepolia",
+            cdpWalletData: agentEnv.CDP_WALLET_DATA,
+            networkId: agentEnv.NETWORK_ID || "base-sepolia",
             model: "gpt-4o-mini",
         });
         await flightyAgent.initialize();

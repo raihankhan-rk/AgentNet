@@ -2,11 +2,13 @@ import dotenv from "dotenv";
 import * as readline from "readline";
 import AgentNetworkProtocol from "../../agent-network-protocol/index.js";
 import { AirbnbAgent } from "./agent.js";
+import { getAgentEnv } from "../utils/loadEnv.js";
 
 dotenv.config();
 
 async function main() {
     const localMode = process.argv.includes("--local");
+    const agentEnv = getAgentEnv();
 
     try {
         const protocol = new AgentNetworkProtocol();
@@ -15,6 +17,8 @@ async function main() {
         console.log('Initializing Airbnb Agent...');
         const airbnbAgent = new AirbnbAgent({
             model: "gpt-4o-mini",
+            cdpWalletData: agentEnv.CDP_WALLET_DATA,
+            networkId: agentEnv.NETWORK_ID || "base-sepolia",
         });
         await airbnbAgent.initialize();
 
