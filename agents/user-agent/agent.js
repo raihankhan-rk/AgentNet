@@ -6,7 +6,7 @@ import { ChatOpenAI } from "@langchain/openai";
 import { DEFAULT_SYSTEM_PROMPT } from "./prompts.js";
 import { createAgentCommunicationTool, createAgentDiscoveryTool, createMultiAgentCommunicationTool, createAgentWalletTool } from "./tools.js";
 
-export class OrchestratorAgent {
+export class UserAgent {
     constructor(config, protocol) {
         this.config = config;
         this.protocol = protocol;
@@ -15,9 +15,9 @@ export class OrchestratorAgent {
         this.ephemeralNode = null;
         this.runnableConfig = {
             configurable: {
-                thread_id: "Orchestrator_Agent",
+                thread_id: "User_Agent",
                 metadata: {
-                    agent_type: "orchestrator",
+                    agent_type: "user",
                 },
             },
         };
@@ -76,7 +76,7 @@ export class OrchestratorAgent {
         try {
             await this.createEphemeralNode();
 
-            console.log('\n[DEBUG] Orchestrator processing message:', message);
+            console.log('\n[DEBUG] User Agent processing message:', message);
             const stream = await this.agent.stream(
                 { messages: [new HumanMessage(message)] },
                 this.runnableConfig
@@ -91,7 +91,7 @@ export class OrchestratorAgent {
                 }
             }
 
-            console.log('[DEBUG] Orchestrator finished processing');
+            console.log('[DEBUG] User Agent finished processing');
             // Clear line and move cursor up for cleaner output
             process.stdout.write('\x1b[2K\r');
             return {
@@ -99,7 +99,7 @@ export class OrchestratorAgent {
                 content: response.trim(),
             };
         } catch (error) {
-            console.error('\n[ERROR] Orchestrator Agent error:', error);
+            console.error('\n[ERROR] User Agent error:', error);
             return {
                 type: "error",
                 content: `Error processing request: ${error instanceof Error ? error.message : "Unknown error"
