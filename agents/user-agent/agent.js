@@ -1,4 +1,5 @@
 import { CdpAgentkit } from "@coinbase/cdp-agentkit-core";
+import { CdpToolkit } from "@coinbase/cdp-langchain";
 import { HumanMessage } from "@langchain/core/messages";
 import { MemorySaver } from "@langchain/langgraph";
 import { createReactAgent } from "@langchain/langgraph/prebuilt";
@@ -7,11 +8,11 @@ import { DEFAULT_SYSTEM_PROMPT } from "./prompts.js";
 import { createAgentCommunicationTool, createAgentDiscoveryTool, createMultiAgentCommunicationTool, createAgentWalletTool } from "./tools.js";
 
 export class UserAgent {
-    constructor(config, protocol) {
-        this.config = config;
+    constructor(agentConfig, protocol) {
+        this.agentConfig = agentConfig;
         this.protocol = protocol;
         this.agent = null;
-        this.memory = new MemorySaver();
+        this.config = null;
         this.ephemeralNode = null;
         this.runnableConfig = {
             configurable: {
@@ -25,28 +26,40 @@ export class UserAgent {
 
     async initialize() {
         const llm = new ChatOpenAI({
-            model: this.config.model || "gpt-4o-mini",
+            model: this.agentConfig.model || "gpt-4o-mini",
             temperature: 0.7,
         });
 
-        // Initialize CDP AgentKit
+        // Initialize CDP AgentKit with the wallet data from config
         const agentkit = await CdpAgentkit.configureWithWallet({
-            cdpWalletData: this.config.cdpWalletData || "",
-            networkId: this.config.networkId || "base-sepolia",
+            cdpWalletData: this.agentConfig.cdpWalletData || "",
+            networkId: this.agentConfig.networkId || "base-sepolia",
         });
 
-        const tools = [
+        // Update wallet address from the provided config
+        this.agentConfig = {
+            ...this.agentConfig,
+            walletAddress: this.agentConfig.cdpWalletData ? 
+                JSON.parse(this.agentConfig.cdpWalletData).defaultAddressId :
+                undefined
+        }
+
+        // Setup tools
+        const cdpToolkit = new CdpToolkit(agentkit);
+        const cdpTools = cdpToolkit.getTools();
+        const customTools = [
             createAgentCommunicationTool(this.protocol),
             createMultiAgentCommunicationTool(this.protocol),
             createAgentDiscoveryTool(this.protocol),
             createAgentWalletTool(this.protocol)
         ];
+        const tools = [...cdpTools, ...customTools];
 
         this.agent = createReactAgent({
             llm,
             tools,
-            checkpointSaver: this.memory,
-            messageModifier: this.config.systemPrompt || DEFAULT_SYSTEM_PROMPT,
+            checkpointSaver: new MemorySaver(),
+            messageModifier: this.agentConfig.systemPrompt || DEFAULT_SYSTEM_PROMPT,
         });
     }
 

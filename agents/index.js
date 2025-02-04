@@ -17,6 +17,7 @@ async function main() {
         // Load agent-specific .env files
         const flightyEnv = loadEnvFromFolder(path.join(process.cwd(), 'flighty'));
         const airbnbEnv = loadEnvFromFolder(path.join(process.cwd(), 'airbnb'));
+        const userEnv = loadEnvFromFolder(path.join(process.cwd(), 'user-agent'));
 
         const protocol = new AgentNetworkProtocol();
         await protocol.initialize();
@@ -57,8 +58,11 @@ async function main() {
 
         await new Promise(resolve => setTimeout(resolve, 2000));
 
+        console.log('Initializing User Agent...');
         const userAgent = new UserAgent({
             model: "gpt-4o-mini",
+            cdpWalletData: userEnv.CDP_WALLET_DATA,
+            networkId: userEnv.NETWORK_ID || process.env.NETWORK_ID || "base-sepolia",
         }, protocol);
         await userAgent.initialize();
 
