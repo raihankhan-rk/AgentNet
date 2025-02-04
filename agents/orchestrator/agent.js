@@ -10,9 +10,8 @@ export class OrchestratorAgent {
     constructor(config, protocol) {
         this.config = config;
         this.protocol = protocol;
+        this.sessionId = `orchestrator_${Date.now()}`;
         this.agent = null;
-        this.memory = new MemorySaver();
-        this.ephemeralNode = null;
         this.runnableConfig = {
             configurable: {
                 thread_id: "Orchestrator_Agent",
@@ -29,51 +28,31 @@ export class OrchestratorAgent {
             temperature: 0.7,
         });
 
-        // Initialize CDP AgentKit
         const agentkit = await CdpAgentkit.configureWithWallet({
             cdpWalletData: this.config.cdpWalletData || "",
             networkId: this.config.networkId || "base-sepolia",
         });
 
         const tools = [
-            createAgentCommunicationTool(this.protocol),
-            createMultiAgentCommunicationTool(this.protocol),
+            createAgentCommunicationTool(this.protocol, this.sessionId),
+            createMultiAgentCommunicationTool(this.protocol, this.sessionId),
             createAgentDiscoveryTool(this.protocol),
         ];
 
         this.agent = createReactAgent({
             llm,
             tools,
-            checkpointSaver: this.memory,
+            checkpointSaver: new MemorySaver(),
             messageModifier: this.config.systemPrompt || DEFAULT_SYSTEM_PROMPT,
         });
     }
 
-    async createEphemeralNode() {
-        if (!this.ephemeralNode) {
-            console.log('\n[DEBUG] Creating new ephemeral orchestrator node...');
-            this.ephemeralNode = await this.protocol.createNode();
-            const peerId = this.ephemeralNode.peerId.toString();
-            this.protocol.nodes.set(peerId, this.ephemeralNode);
-            console.log(`[DEBUG] Ephemeral orchestrator node created with peerId: ${peerId}`);
-        }
-        return this.ephemeralNode;
-    }
-
-    async destroyEphemeralNode() {
-        if (this.ephemeralNode) {
-            const peerId = this.ephemeralNode.peerId.toString();
-            console.log('\n[DEBUG] Cleaning up ephemeral orchestrator node...');
-            this.protocol.nodes.delete(peerId);
-            await this.ephemeralNode.stop();
-            this.ephemeralNode = null;
-            console.log(`[DEBUG] Ephemeral orchestrator node ${peerId} destroyed`);
-        }
-    }
-
     async handleMessage(message) {
         try {
-            await this.createEphemeralNode();
+            // Create ephemeral node if needed for protocol communication
+            if (!this.protocol.getEphemeralNode(this.sessionId)) {
+                await this.protocol.createEphemeralNode(this.sessionId);
+            }
             
             console.log('\n[DEBUG] Orchestrator processing message:', message);
             const stream = await this.agent.stream(
@@ -91,7 +70,6 @@ export class OrchestratorAgent {
             }
 
             console.log('[DEBUG] Orchestrator finished processing');
-            // Clear line and move cursor up for cleaner output
             process.stdout.write('\x1b[2K\r');
             return {
                 type: "response",
@@ -109,7 +87,7 @@ export class OrchestratorAgent {
     }
 
     async cleanup() {
-        await this.destroyEphemeralNode();
+        await this.protocol.destroyEphemeralNode(this.sessionId);
     }
 
     getAgent() {

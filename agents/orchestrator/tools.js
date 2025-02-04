@@ -1,7 +1,7 @@
 import { DynamicStructuredTool } from "@langchain/core/tools";
 import z from "zod";
 
-export function createAgentCommunicationTool(protocol) {
+export function createAgentCommunicationTool(protocol, sessionId) {
     let cachedAgents = {};  // Cache for agents by capability
 
     return new DynamicStructuredTool({
@@ -16,6 +16,11 @@ export function createAgentCommunicationTool(protocol) {
         }),
         func: async ({ capability, message, requireResponse = true, metadata = {}, parallel = false }) => {
             try {
+                // Ensure ephemeral node exists
+                if (!protocol.getEphemeralNode(sessionId)) {
+                    await protocol.createEphemeralNode(sessionId);
+                }
+                
                 // Use cached agents if available, otherwise search
                 if (!cachedAgents[capability]) {
                     cachedAgents[capability] = await protocol.findAgentsByCapability(capability.trim().toLowerCase());
@@ -61,7 +66,7 @@ export function createAgentCommunicationTool(protocol) {
     });
 }
 
-export function createMultiAgentCommunicationTool(protocol) {
+export function createMultiAgentCommunicationTool(protocol, sessionId) {
     return new DynamicStructuredTool({
         name: "communicate_with_multiple_agents",
         description: "Communicate with multiple agents in parallel",
@@ -74,6 +79,11 @@ export function createMultiAgentCommunicationTool(protocol) {
         }),
         func: async ({ requests }) => {
             try {
+                // Ensure ephemeral node exists
+                if (!protocol.getEphemeralNode(sessionId)) {
+                    await protocol.createEphemeralNode(sessionId);
+                }
+                
                 const responses = await Promise.all(
                     requests.map(async (request) => {
                         const agents = await protocol.findAgentsByCapability(request.capability.trim().toLowerCase());

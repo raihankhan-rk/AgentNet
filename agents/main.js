@@ -13,32 +13,28 @@ async function main() {
         const protocol = new AgentNetworkProtocol();
         await protocol.initialize();
 
-        // Deploy Flighty Agent
-        console.log('Initializing Flighty Agent...');
-        const flightyAgent = new FlightyAgent({
+        // Register the agent builders
+        protocol.registerAgentBuilder('flighty', FlightyAgent);
+        protocol.registerAgentBuilder('airbnb', AirbnbAgent);
+
+        // Create and deploy Flighty Agent with CDP configuration
+        console.log('Creating and Deploying Flighty Agent...');
+        const flightyDeployment = await protocol.createAndDeployCdpAgent('flighty', {
             cdpWalletData: process.env.CDP_WALLET_DATA || "",
             networkId: process.env.NETWORK_ID || "base-sepolia",
             model: "gpt-4o-mini",
-        });
-        await flightyAgent.initialize();
-
-        console.log('Deploying Flighty Agent...');
-        const flightyDeployment = await protocol.deployAgent(flightyAgent, {
             name: "Flighty Travel Assistant",
             description: "An AI agent that helps users search and book flights",
             capabilities: ["flight-booking"],
         });
         console.log('Flighty Agent deployed with peerId:', flightyDeployment.peerId);
 
-        // Deploy Airbnb Agent
-        console.log('Initializing Airbnb Agent...');
-        const airbnbAgent = new AirbnbAgent({
+        // Create and deploy Airbnb Agent with CDP configuration
+        console.log('Creating and Deploying Airbnb Agent...');
+        const airbnbDeployment = await protocol.createAndDeployCdpAgent('airbnb', {
+            cdpWalletData: process.env.AIRBNB_CDP_WALLET_DATA || "",
+            networkId: process.env.AIRBNB_NETWORK_ID || "base-sepolia",
             model: "gpt-4o-mini",
-        });
-        await airbnbAgent.initialize();
-
-        console.log('Deploying Airbnb Agent...');
-        const airbnbDeployment = await protocol.deployAgent(airbnbAgent, {
             name: "Airbnb Accommodation Assistant",
             description: "An AI agent that helps users search and book accommodations",
             capabilities: ["accommodation-booking"],
