@@ -1,9 +1,22 @@
 {
-    "name": "protocol",
+    "name": "agent-network-protocol",
     "version": "1.0.0",
-    "description": "",
+    "description": "Agent network communication protocol",
     "type": "module",
-    "main": "index.js",
+    "main": "./index.js",
+    "types": "./index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./index.d.ts",
+            "import": "./index.js",
+            "require": "./index.js"
+        }
+    },
+    "files": [
+        "index.js",
+        "index.d.ts",
+        "registryServer.js"
+    ],
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1",
         "start": "nodemon my_file.js"

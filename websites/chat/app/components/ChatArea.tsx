@@ -28,14 +28,22 @@ const ChatArea = () => {
         {currentRoom?.messages.map((message, index) => (
           <div
             key={index}
-            className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
+            className={`flex ${
+              message.type === 'user' 
+                ? 'justify-end' 
+                : message.type === 'system' 
+                  ? 'justify-center' 
+                  : 'justify-start'
+            }`}
           >
             <div
-              className={`max-w-[70%] rounded-lg p-3 ${
+              className={`${
                 message.type === 'user'
-                  ? 'bg-[#C4CAFF] backdrop-blur-sm border-[1px] border-white text-black ml-auto'
-                  : 'bg-white/50 backdrop-blur-sm border-[1px] border-white text-black shadow mr-auto'
-              }`}
+                  ? 'bg-[#C4CAFF] backdrop-blur-sm border-[1px] border-white text-black ml-auto max-w-[70%]'
+                  : message.type === 'system'
+                  ? 'bg-gray-100 text-gray-600 text-sm px-4 py-2 rounded-full'
+                  : 'bg-white/50 backdrop-blur-sm border-[1px] border-white text-black shadow mr-auto max-w-[70%]'
+              } rounded-lg p-3`}
             >
               {message.content}
             </div>

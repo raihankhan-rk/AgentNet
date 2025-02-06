@@ -3,7 +3,7 @@ import React, { createContext, useContext, useState, ReactNode } from 'react';
 
 interface Message {
   content: string;
-  type: 'user' | 'agent';
+  type: 'user' | 'agent' | 'system';
 }
 
 interface ChatRoom {
@@ -16,7 +16,7 @@ interface ChatContextType {
   rooms: ChatRoom[];
   currentRoomId: string;
   isTyping: boolean;
-  addMessage: (content: string, type: 'user' | 'agent') => void;
+  addMessage: (content: string, type: 'user' | 'agent' | 'system') => void;
   switchRoom: (roomId: string) => void;
   addRoom: () => void;
   setIsTyping: (value: boolean) => void;
@@ -31,13 +31,13 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
   const [currentRoomId, setCurrentRoomId] = useState<string>('1');
   const [isTyping, setIsTyping] = useState(false);
 
-  const addMessage = (content: string, type: 'user' | 'agent') => {
+  const addMessage = (content: string, type: 'user' | 'agent' | 'system') => {
     setRooms((prevRooms) =>
       prevRooms.map((room) => {
         if (room.id === currentRoomId) {
           const newMessages = [...room.messages, { content, type }];
           const newName =
-            room.messages.length === 0
+            room.messages.length === 0 && type === 'user'
               ? content.split(' ').slice(0, 3).join(' ') + '...'
               : room.name;
           return { ...room, messages: newMessages, name: newName };
