@@ -1,17 +1,29 @@
 import dotenv from "dotenv";
+import fs from "fs";
 import path from "path";
 import { fileURLToPath } from 'url';
 
 export function loadEnvFromFolder(folderPath) {
     const envPath = path.join(folderPath, '.env');
-    const result = dotenv.config({ path: envPath });
     
-    if (result.error) {
-        console.warn(`Warning: No .env file found in ${folderPath}`);
+    try {
+        if (fs.existsSync(envPath)) {
+            console.log(`Loading .env from: ${envPath}`);
+            const envConfig = dotenv.config({ path: envPath });
+            if (envConfig.error) {
+                console.warn(`Error loading .env from ${envPath}:`, envConfig.error);
+            } else {
+                console.log(`Successfully loaded .env from ${envPath}`);
+            }
+            return envConfig.parsed || {};
+        } else {
+            console.warn(`No .env file found at: ${envPath}`);
+            return {};
+        }
+    } catch (error) {
+        console.warn(`Error checking .env at ${envPath}:`, error);
         return {};
     }
-    
-    return result.parsed;
 }
 
 export function getAgentEnv() {

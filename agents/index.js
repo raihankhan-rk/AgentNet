@@ -1,23 +1,27 @@
 import dotenv from "dotenv";
+import path from "path";
 import * as readline from "readline";
+import { fileURLToPath } from 'url';
 import AgentNetworkProtocol from "../agent-network-protocol/index.js";
 import { AirbnbAgent } from "./airbnb/agent.js";
 import { FlightyAgent } from "./flighty/agent.js";
 import { UserAgent } from "./user-agent/agent.js";
 import { loadEnvFromFolder } from "./utils/loadEnv.js";
-import path from "path";
+
+// Get the directory path for the current module
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 dotenv.config();
 
 async function main() {
     try {
         // Load root .env first (for shared variables)
-        loadEnvFromFolder(process.cwd());
+        loadEnvFromFolder(path.join(__dirname, '../../')); // Go up to websites/chat
         
-        // Load agent-specific .env files
-        const flightyEnv = loadEnvFromFolder(path.join(process.cwd(), 'flighty'));
-        const airbnbEnv = loadEnvFromFolder(path.join(process.cwd(), 'airbnb'));
-        const userEnv = loadEnvFromFolder(path.join(process.cwd(), 'user-agent'));
+        // Load agent-specific .env files with correct paths
+        const flightyEnv = loadEnvFromFolder(path.join(__dirname, '../agents/flighty'));
+        const airbnbEnv = loadEnvFromFolder(path.join(__dirname, '../agents/airbnb'));
+        const userEnv = loadEnvFromFolder(path.join(__dirname, '../agents/user-agent'));
 
         const protocol = new AgentNetworkProtocol();
         await protocol.initialize();

@@ -1,11 +1,11 @@
 import dotenv from "dotenv";
 // import * as readline from "readline";
+import path from "path";
 import AgentNetworkProtocol from "../../../agent-network-protocol/index.js";
 import { AirbnbAgent } from "../agents/airbnb/agent.js";
 import { FlightyAgent } from "../agents/flighty/agent.js";
 import { UserAgent } from "../agents/user-agent/agent.js";
 import { loadEnvFromFolder } from "../agents/utils/loadEnv.js";
-import path from "path";
 
 dotenv.config();
 
@@ -20,20 +20,22 @@ class AgentManager {
         if (this.initialized) return;
 
         try {
-            loadEnvFromFolder(process.cwd());
             
-            const flightyEnv = loadEnvFromFolder(path.join(process.cwd(), 'flighty'));
-            const airbnbEnv = loadEnvFromFolder(path.join(process.cwd(), 'airbnb'));
-            const userEnv = loadEnvFromFolder(path.join(process.cwd(), 'user-agent'));
+            const flightyEnv = loadEnvFromFolder(path.join(process.cwd(), '../../agents/flighty'));
+            const airbnbEnv = loadEnvFromFolder(path.join(process.cwd(), '../../agents/airbnb'));
+            const userEnv = loadEnvFromFolder(path.join(process.cwd(), '../../agents/user-agent'));
+
 
             this.protocol = new AgentNetworkProtocol();
             await this.protocol.initialize();
 
             console.log('Initializing Flighty Agent...');
             const flightyAgent = new FlightyAgent({
-                networkId: flightyEnv.NETWORK_ID || process.env.NETWORK_ID || "base-sepolia",
+                networkId: flightyEnv.NETWORK_ID || "base-sepolia",
                 model: "gpt-4o-mini",
                 cdpWalletData: flightyEnv.CDP_WALLET_DATA,
+                cdpApiKeyName: flightyEnv.CDP_API_KEY_NAME || "",
+                cdpApiKeyPrivateKey: flightyEnv.CDP_API_KEY_PRIVATE_KEY || "",
             });
             await flightyAgent.initialize();
 
@@ -49,7 +51,9 @@ class AgentManager {
             const airbnbAgent = new AirbnbAgent({
                 model: "gpt-4o-mini",
                 cdpWalletData: airbnbEnv.CDP_WALLET_DATA,
-                networkId: airbnbEnv.NETWORK_ID || process.env.NETWORK_ID || "base-sepolia",
+                networkId: airbnbEnv.NETWORK_ID || "base-sepolia",
+                cdpApiKeyName: airbnbEnv.CDP_API_KEY_NAME || "",
+                cdpApiKeyPrivateKey: airbnbEnv.CDP_API_KEY_PRIVATE_KEY || "",
             });
             await airbnbAgent.initialize();
 
@@ -67,7 +71,7 @@ class AgentManager {
             this.userAgent = new UserAgent({
                 model: "gpt-4o-mini",
                 cdpWalletData: userEnv.CDP_WALLET_DATA,
-                networkId: userEnv.NETWORK_ID || process.env.NETWORK_ID || "base-sepolia",
+                networkId: userEnv.NETWORK_ID || "base-sepolia",
             }, this.protocol);
             await this.userAgent.initialize();
 
