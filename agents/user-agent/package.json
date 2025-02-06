@@ -20,6 +20,8 @@
         "@langchain/core": "^0.3.37",
         "@langchain/langgraph": "^0.2.44",
         "@langchain/openai": "^0.4.2",
+        "nillion-sv-wrappers": "^1.0.7",
+        "uuid": "^11.0.5",
         "zod": "^3.22.4"
     }
 }

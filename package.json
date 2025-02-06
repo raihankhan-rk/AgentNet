@@ -4,11 +4,15 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start:product": "pnpm --filter product dev", 
+    "start:product": "pnpm --filter product dev",
     "build": "pnpm recursive run build",
     "test": "pnpm recursive run test"
   },
   "keywords": [],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "nillion-sv-wrappers": "^1.0.7",
+    "uuid": "^11.0.5"
+  }
 }

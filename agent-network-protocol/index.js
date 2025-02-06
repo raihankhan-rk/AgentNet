@@ -6,16 +6,29 @@ import { noise } from "@libp2p/noise";
 import { tcp } from "@libp2p/tcp";
 import axios from "axios";
 import { createLibp2p } from "libp2p";
+import { NillionService } from './memory/NillionService.js';
 
 export default class AgentNetworkProtocol {
-    constructor() {
+    constructor(config) {
         this.registrarUrl = 'http://localhost:3000';
         this.messageHandlers = new Map();
         this.pendingResponses = new Map();
         this.nodes = new Map();
+        this.nillionService = new NillionService();
+        this.config = config;
+        this.initialized = false;
+        console.log('Nillion: Creating new protocol instance');
     }
 
     async initialize() {
+        if (this.initialized) {
+            console.log('Nillion: Protocol already initialized, skipping');
+            return;
+        }
+
+        console.log('Nillion: Starting protocol initialization');
+        
+        // Initialize p2p networking config
         this.baseConfig = {
             addresses: {
                 listen: ['/ip4/127.0.0.1/tcp/0']
@@ -40,6 +53,12 @@ export default class AgentNetworkProtocol {
                 })
             }
         };
+
+        console.log('Nillion: Initializing memory service');
+        await this.nillionService.initialize();
+        
+        this.initialized = true;
+        console.log('Nillion: Protocol initialization complete');
     }
 
     async createNode() {
@@ -331,5 +350,24 @@ export default class AgentNetworkProtocol {
                 }
             }
         }
+    }
+
+    async getUserContext(walletAddress) {
+        console.log('Nillion: Protocol forwarding getUserContext');
+        return this.nillionService.getUserContext(walletAddress);
+    }
+
+    async createOrUpdateUserContext(walletAddress, profile) {
+        console.log('Nillion: Protocol forwarding createOrUpdateUserContext');
+        return this.nillionService.createOrUpdateUserContext(walletAddress, profile);
+    }
+
+    async addChatMessage(walletAddress, message) {
+        console.log('Nillion: Protocol forwarding addChatMessage');
+        return this.nillionService.addChatMessage(walletAddress, message);
+    }
+
+    async extractNameFromMessage(llm, input) {
+        return this.nillionService.extractNameFromMessage(llm, input);
     }
 }

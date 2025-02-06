@@ -10,9 +10,14 @@ async function main() {
         const protocol = new AgentNetworkProtocol();
         await protocol.initialize();
 
+        // Mock wallet connection for testing
+        const mockWalletAddress = "0x742d35Cc6634C0532925a3b844Bc454e4438f44e";
+        
         const userAgent = new UserAgent({
             model: "gpt-4o-mini",
+            walletAddress: mockWalletAddress
         }, protocol);
+        
         await userAgent.initialize();
 
         const rl = readline.createInterface({
@@ -21,7 +26,9 @@ async function main() {
         });
 
         console.log('\n=== User Agent Started ===');
-        console.log('Type your questions below.');
+        console.log('Connected wallet:', mockWalletAddress);
+        console.log('Type your messages below.');
+        console.log('Use /setup <name> if this is your first time.');
         console.log('Type "exit" to end the conversation.\n');
 
         const askQuestion = () => {
@@ -54,4 +61,4 @@ async function main() {
     }
 }
 
-main()
+main();

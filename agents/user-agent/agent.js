@@ -4,139 +4,188 @@ import { HumanMessage } from "@langchain/core/messages";
 import { MemorySaver } from "@langchain/langgraph";
 import { createReactAgent } from "@langchain/langgraph/prebuilt";
 import { ChatOpenAI } from "@langchain/openai";
+import { v4 as uuidv4 } from 'uuid';
 import { DEFAULT_SYSTEM_PROMPT } from "./prompts.js";
-import { createAgentCommunicationTool, createAgentDiscoveryTool, createMultiAgentCommunicationTool, createAgentWalletTool } from "./tools.js";
+import {
+  createAgentCommunicationTool,
+  createAgentDiscoveryTool,
+  createAgentWalletTool,
+  createMultiAgentCommunicationTool
+} from "./tools.js";
 
 export class UserAgent {
-    constructor(agentConfig, protocol) {
-        this.agentConfig = agentConfig;
-        this.protocol = protocol;
-        this.agent = null;
-        this.config = null;
-        this.ephemeralNode = null;
-        this.runnableConfig = {
-            configurable: {
-                thread_id: "User_Agent",
-                metadata: {
-                    agent_type: "user",
-                },
-            },
-        };
-    }
+  constructor(agentConfig, protocol) {
+    this.agentConfig = agentConfig;
+    this.protocol = protocol;
+    this.agent = null;
+    this.userId = `user_${uuidv4()}`;
+    this.runnableConfig = {
+      configurable: {
+        thread_id: "User_Agent",
+        metadata: {
+          agent_type: "user",
+        },
+      },
+    };
+    this.walletAddress = agentConfig.walletAddress || null;
+    this.llm = null;
+  }
 
-    async initialize() {
-        const llm = new ChatOpenAI({
-            model: this.agentConfig.model || "gpt-4o-mini",
-            temperature: 0.7,
-        });
+  async initialize() {
+    this.llm = new ChatOpenAI({
+      model: this.agentConfig.model || "gpt-4o-mini",
+      temperature: 0.7,
+    });
 
-        // Initialize CDP AgentKit with the wallet data from config
-        const agentkit = await CdpAgentkit.configureWithWallet({
-            cdpWalletData: this.agentConfig.cdpWalletData || "",
-            networkId: this.agentConfig.networkId || "base-sepolia",
-        });
+    const agentkit = await CdpAgentkit.configureWithWallet({
+      cdpWalletData: this.agentConfig.cdpWalletData || "",
+      networkId: this.agentConfig.networkId || "base-sepolia",
+    });
 
-        // Update wallet address from the provided config
-        this.agentConfig = {
-            ...this.agentConfig,
-            walletAddress: this.agentConfig.cdpWalletData ? 
-                JSON.parse(this.agentConfig.cdpWalletData).defaultAddressId :
-                undefined
-        }
+    const cdpToolkit = new CdpToolkit(agentkit);
+    const cdpTools = cdpToolkit.getTools();
+    const customTools = [
+      createAgentCommunicationTool(this.protocol),
+      createMultiAgentCommunicationTool(this.protocol),
+      createAgentDiscoveryTool(this.protocol),
+      createAgentWalletTool(this.protocol)
+    ];
 
-        // Setup tools
-        const cdpToolkit = new CdpToolkit(agentkit);
-        const cdpTools = cdpToolkit.getTools();
-        const customTools = [
-            createAgentCommunicationTool(this.protocol),
-            createMultiAgentCommunicationTool(this.protocol),
-            createAgentDiscoveryTool(this.protocol),
-            createAgentWalletTool(this.protocol)
-        ];
-        const tools = [...cdpTools, ...customTools];
+    this.agent = createReactAgent({
+      llm: this.llm,
+      tools: [...cdpTools, ...customTools],
+      checkpointSaver: new MemorySaver(),
+      messageModifier: this.agentConfig.systemPrompt || DEFAULT_SYSTEM_PROMPT,
+    });
+  }
 
-        this.agent = createReactAgent({
-            llm,
-            tools,
-            checkpointSaver: new MemorySaver(),
-            messageModifier: this.agentConfig.systemPrompt || DEFAULT_SYSTEM_PROMPT,
-        });
-    }
+  async handleMessage(input) {
+    try {
+      if (!this.walletAddress) {
+        throw new Error('No wallet address provided. Please connect wallet first.');
+      }
 
-    async createEphemeralNode() {
-        if (!this.ephemeralNode) {
-            console.log('\n[DEBUG] Creating new ephemeral orchestrator node...');
-            this.ephemeralNode = await this.protocol.createNode();
-            const peerId = this.ephemeralNode.peerId.toString();
-            this.protocol.nodes.set(peerId, this.ephemeralNode);
-            console.log(`[DEBUG] Ephemeral orchestrator node created with peerId: ${peerId}`);
-        }
-        return this.ephemeralNode;
-    }
+      let userContext = await this.protocol.getUserContext(this.walletAddress);
+      console.log('Nillion Debug: Current user context:', JSON.stringify(userContext, null, 2));
+      
+      const currentName = userContext?.userProfile?.name?.$share?.$allot || 'Anonymous';
+      const isNewUser = !userContext || currentName === 'Anonymous';
 
-    async destroyEphemeralNode() {
-        if (this.ephemeralNode) {
-            const peerId = this.ephemeralNode.peerId.toString();
-            console.log('\n[DEBUG] Cleaning up ephemeral orchestrator node...');
-            this.protocol.nodes.delete(peerId);
-            await this.ephemeralNode.stop();
-            this.ephemeralNode = null;
-            console.log(`[DEBUG] Ephemeral orchestrator node ${peerId} destroyed`);
-        }
-    }
-
-    async handleMessage(message) {
-        try {
-            await this.createEphemeralNode();
-
-            console.log('\n[DEBUG] User Agent processing message:', message);
-            const stream = await this.agent.stream(
-                { messages: [new HumanMessage(message)] },
-                this.runnableConfig
-            );
-
-            let response = "";
-            for await (const chunk of stream) {
-                if ("agent" in chunk) {
-                    response += chunk.agent.messages[0].content + "\n";
-                } else if ("tools" in chunk) {
-                    response += chunk.tools.messages[0].content + "\n";
-                }
+      if (isNewUser) {
+        console.log('Nillion Debug: New user detected');
+        const nameExtraction = await this.protocol.extractNameFromMessage(this.llm, input);
+        if (nameExtraction.name) {
+          userContext = await this.protocol.createOrUpdateUserContext(
+            this.walletAddress,
+            {
+              name: nameExtraction.name,
+              preferences: {}
             }
-
-            console.log('[DEBUG] User Agent finished processing');
-            // Clear line and move cursor up for cleaner output
-            process.stdout.write('\x1b[2K\r');
-            return {
-                type: "response",
-                content: response.trim(),
-            };
-        } catch (error) {
-            console.error('\n[ERROR] User Agent error:', error);
-            return {
-                type: "error",
-                content: `Error processing request: ${error instanceof Error ? error.message : "Unknown error"
-                    }`,
-            };
+          );
+          await this.protocol.addChatMessage(this.walletAddress, {
+            message: input,
+            type: 'human',
+            timestamp: new Date().toISOString()
+          });
+          await this.protocol.addChatMessage(this.walletAddress, {
+            message: nameExtraction.response,
+            type: 'ai',
+            timestamp: new Date().toISOString()
+          });
+          return {
+            type: "response",
+            content: nameExtraction.response
+          };
+        } else {
+          // If no name found, ask for it naturally.
+          await this.protocol.addChatMessage(this.walletAddress, {
+            message: input,
+            type: 'human',
+            timestamp: new Date().toISOString()
+          });
+          const response = "Hi there! What's your name?";
+          await this.protocol.addChatMessage(this.walletAddress, {
+            message: response,
+            type: 'ai',
+            timestamp: new Date().toISOString()
+          });
+          return {
+            type: "response",
+            content: response
+          };
         }
-    }
-
-    async cleanup() {
-        await this.destroyEphemeralNode();
-    }
-
-    getAgent() {
-        if (!this.agent) {
-            throw new Error('Agent not initialized. Call initialize() first.');
+      } else {
+        console.log('Nillion Debug: Existing user detected');
+        const nameExtraction = await this.protocol.extractNameFromMessage(this.llm, input);
+        const newName = nameExtraction.name;
+        const nameUpdated = newName && newName !== currentName;
+        if (nameUpdated) {
+          const preferences = Array.isArray(userContext.userProfile.preferences)
+            ? {}
+            : JSON.parse(userContext.userProfile.preferences.$share.$allot || '{}');
+          userContext = await this.protocol.createOrUpdateUserContext(
+            this.walletAddress,
+            {
+              name: newName,
+              preferences: preferences
+            }
+          );
+          console.log('Nillion Debug: Updated user context:', JSON.stringify(userContext, null, 2));
         }
-        return this.agent;
-    }
 
-    getConfig() {
-        return this.runnableConfig;
-    }
+        await this.protocol.addChatMessage(this.walletAddress, {
+          message: input,
+          type: 'human',
+          timestamp: new Date().toISOString()
+        });
 
-    getPendingResponses() {
-        return this.protocol.pendingResponses;
+        const contextualizedInput = {
+          messages: [new HumanMessage(input)],
+          context: {
+            userProfile: {
+              name: Array.isArray(userContext.userProfile.name)
+                ? 'Anonymous'
+                : userContext.userProfile.name.$share.$allot,
+              preferences: Array.isArray(userContext.userProfile.preferences)
+                ? {}
+                : JSON.parse(userContext.userProfile.preferences.$share.$allot || '{}')
+            },
+            nameJustUpdated: nameUpdated
+          }
+        };
+
+        console.log('Nillion Debug: Contextualized Input:', JSON.stringify(contextualizedInput, null, 2));
+
+        const stream = await this.agent.stream(contextualizedInput, this.runnableConfig);
+        let response = "";
+        for await (const chunk of stream) {
+          if ("agent" in chunk) {
+            response += chunk.agent.messages[0].content + "\n";
+          }
+        }
+        const trimmedResponse = response.trim();
+
+        await this.protocol.addChatMessage(this.walletAddress, {
+          message: trimmedResponse,
+          type: 'ai',
+          timestamp: new Date().toISOString()
+        });
+
+        return {
+          type: "response",
+          content: trimmedResponse
+        };
+      }
+    } catch (error) {
+      console.error('Error in handleMessage:', error);
+      return {
+        type: "error",
+        content: String(error.message)
+      };
     }
+  }
+
+  async cleanup() {
+    // Any cleanup needed
+  }
 }

@@ -1,26 +1,26 @@
 import dotenv from "dotenv";
+import path from "path";
 import * as readline from "readline";
 import AgentNetworkProtocol from "../agent-network-protocol/index.js";
 import { AirbnbAgent } from "./airbnb/agent.js";
 import { FlightyAgent } from "./flighty/agent.js";
 import { UserAgent } from "./user-agent/agent.js";
 import { loadEnvFromFolder } from "./utils/loadEnv.js";
-import path from "path";
 
 dotenv.config();
 
 async function main() {
     try {
-        // Load root .env first (for shared variables)
         loadEnvFromFolder(process.cwd());
         
-        // Load agent-specific .env files
         const flightyEnv = loadEnvFromFolder(path.join(process.cwd(), 'flighty'));
         const airbnbEnv = loadEnvFromFolder(path.join(process.cwd(), 'airbnb'));
         const userEnv = loadEnvFromFolder(path.join(process.cwd(), 'user-agent'));
 
         const protocol = new AgentNetworkProtocol();
         await protocol.initialize();
+
+        const mockWalletAddress = "0x742d35Cc6634C0532925a3b844Bc454e4438f44e";
 
         console.log('Initializing Flighty Agent...');
         const flightyAgent = new FlightyAgent({
@@ -63,6 +63,7 @@ async function main() {
             model: "gpt-4o-mini",
             cdpWalletData: userEnv.CDP_WALLET_DATA,
             networkId: userEnv.NETWORK_ID || process.env.NETWORK_ID || "base-sepolia",
+            walletAddress: mockWalletAddress
         }, protocol);
         await userAgent.initialize();
 
