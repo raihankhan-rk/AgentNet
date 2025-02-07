@@ -29,13 +29,11 @@ export class UserAgent {
             temperature: 0.7,
         });
 
-        // Initialize CDP AgentKit with the wallet data from config
         const agentkit = await CdpAgentkit.configureWithWallet({
             cdpWalletData: this.agentConfig.cdpWalletData || "",
             networkId: this.agentConfig.networkId || "base-sepolia",
         });
 
-        // Update wallet address from the provided config
         this.agentConfig = {
             ...this.agentConfig,
             walletAddress: this.agentConfig.cdpWalletData ? 

@@ -1,8 +1,8 @@
 import dotenv from "dotenv";
 import * as readline from "readline";
 import AgentNetworkProtocol from "../../agent-network-protocol/index.js";
-import { AirbnbAgent } from "./agent.js";
 import { getAgentEnv } from "../utils/loadEnv.js";
+import { AirbnbAgent } from "./agent.js";
 
 dotenv.config();
 
