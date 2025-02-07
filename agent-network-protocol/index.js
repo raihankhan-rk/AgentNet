@@ -6,6 +6,7 @@ import { noise } from "@libp2p/noise";
 import { tcp } from "@libp2p/tcp";
 import axios from "axios";
 import { createLibp2p } from "libp2p";
+import { getProtocolTools } from './tools.js';
 
 export default class AgentNetworkProtocol {
     constructor() {
@@ -331,5 +332,9 @@ export default class AgentNetworkProtocol {
                 }
             }
         }
+    }
+
+    getTools() {
+        return getProtocolTools(this);
     }
 }

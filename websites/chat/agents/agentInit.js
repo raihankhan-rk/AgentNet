@@ -21,10 +21,9 @@ class AgentManager {
 
         try {
             
-            const flightyEnv = loadEnvFromFolder(path.join(process.cwd(), '../../agents/flighty'));
-            const airbnbEnv = loadEnvFromFolder(path.join(process.cwd(), '../../agents/airbnb'));
-            const userEnv = loadEnvFromFolder(path.join(process.cwd(), '../../agents/user-agent'));
-
+            const flightyEnv = loadEnvFromFolder(path.join(process.cwd(), 'agents/flighty'));
+            const airbnbEnv = loadEnvFromFolder(path.join(process.cwd(), 'agents/airbnb'));
+            const userEnv = loadEnvFromFolder(path.join(process.cwd(), 'agents/user-agent'));
 
             this.protocol = new AgentNetworkProtocol();
             await this.protocol.initialize();
@@ -86,7 +85,9 @@ class AgentManager {
         if (!this.initialized) {
             throw new Error("AgentManager not initialized");
         }
-        return await this.userAgent.handleMessage(message);
+        const response = await this.userAgent.handleMessage(message);
+        console.log('Response:', response);
+        return response;
     }
 
     async cleanup() {

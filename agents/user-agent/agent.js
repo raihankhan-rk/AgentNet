@@ -5,7 +5,6 @@ import { MemorySaver } from "@langchain/langgraph";
 import { createReactAgent } from "@langchain/langgraph/prebuilt";
 import { ChatOpenAI } from "@langchain/openai";
 import { DEFAULT_SYSTEM_PROMPT } from "./prompts.js";
-import { createAgentCommunicationTool, createAgentDiscoveryTool, createMultiAgentCommunicationTool, createAgentWalletTool } from "./tools.js";
 
 export class UserAgent {
     constructor(agentConfig, protocol) {
@@ -47,13 +46,8 @@ export class UserAgent {
         // Setup tools
         const cdpToolkit = new CdpToolkit(agentkit);
         const cdpTools = cdpToolkit.getTools();
-        const customTools = [
-            createAgentCommunicationTool(this.protocol),
-            createMultiAgentCommunicationTool(this.protocol),
-            createAgentDiscoveryTool(this.protocol),
-            createAgentWalletTool(this.protocol)
-        ];
-        const tools = [...cdpTools, ...customTools];
+        const protocolTools = this.protocol.getTools(); // Get tools from protocol
+        const tools = [...cdpTools, ...protocolTools];
 
         this.agent = createReactAgent({
             llm,
