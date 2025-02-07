@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
+import rehypeRaw from 'rehype-raw';
 import { useChat } from '../context/ChatContext';
 import EmptyChat from './EmptyChat';
 import TypingIndicator from './TypingIndicator';
@@ -26,7 +27,8 @@ const ChatArea = () => {
       if (humanMessageMatch) {
         const humanMessage = humanMessageMatch[1].trim();
         if (humanMessage) {
-          return humanMessage;
+          // Replace double newlines with special marker
+          return humanMessage.replace(/\n\n/g, '<br/><br/>');
         }
       }
 
@@ -56,7 +58,7 @@ const ChatArea = () => {
       // If parsing fails, check for human-readable message after JSON errors
       const lastMessage = content.split(/}/).pop()?.trim();
       if (lastMessage && !lastMessage.includes('{')) {
-        return lastMessage;
+        return lastMessage.replace(/\n\n/g, '<br/><br/>');
       }
       
       // If no human message found, try to extract error message
@@ -73,7 +75,7 @@ const ChatArea = () => {
         }
       }
       // Return original content if all parsing fails
-      return content;
+      return content.replace(/\n\n/g, '<br/><br/>');
     }
   };
 
@@ -102,10 +104,25 @@ const ChatArea = () => {
                     ? 'bg-[#C4CAFF] backdrop-blur-sm border-[1px] border-white text-black ml-auto max-w-[70%]'
                     : message.type === 'system'
                     ? 'bg-gray-100 text-gray-600 text-sm px-4 py-2 rounded-full'
-                    : 'bg-white/50 backdrop-blur-sm border-[1px] border-white text-black shadow mr-auto max-w-[50vw]'
+                    : 'bg-white/50 backdrop-blur-sm border-[1px] border-white text-black shadow mr-auto max-w-[70%]'
                 } rounded-lg p-3 prose prose-sm max-w-none`}
               >
-                <ReactMarkdown>{formatErrorMessage(message.content)}</ReactMarkdown>
+                <ReactMarkdown
+                  rehypePlugins={[rehypeRaw]}
+                  components={{
+                    a: ({ node, ...props }) => (
+                      <a
+                        {...props}
+                        className="text-blue-600 hover:text-blue-800 underline decoration-blue-400 decoration-2 underline-offset-2 transition-colors"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      />
+                    ),
+                    br: ({ node, ...props }) => <br className="block my-2" {...props} />,
+                  }}
+                >
+                  {formatErrorMessage(message.content)}
+                </ReactMarkdown>
               </div>
             </div>
           ))}
