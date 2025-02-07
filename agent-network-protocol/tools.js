@@ -1,8 +1,32 @@
+import { create } from 'zustand';
 import { DynamicStructuredTool } from "@langchain/core/tools";
 import z from "zod";
 
+export const useAgentEventStore = create((set) => ({
+  systemMessages: [],
+  addMessage: (content) => 
+    set((state) => ({
+      systemMessages: [
+        ...state.systemMessages,
+        { 
+          id: Math.random().toString(36).substr(2, 9),
+          content,
+          timestamp: Date.now()
+        }
+      ]
+    })),
+  clearMessages: () => set({ systemMessages: [] })
+}));
+
+export const AgentEventTypes = {
+  DISCOVERY: 'agent:discovery',
+  COMMUNICATION: 'agent:communication',
+  RESPONSE: 'agent:response',
+  ERROR: 'agent:error'
+};
+
 export function createAgentCommunicationTool(protocol) {
-    let cachedAgents = {};  // Cache for agents by capability
+    let cachedAgents = {};
 
     return new DynamicStructuredTool({
         name: "communicate_with_agent",
@@ -15,25 +39,190 @@ export function createAgentCommunicationTool(protocol) {
             parallel: z.boolean().optional().describe("Whether to run in parallel with other requests")
         }),
         func: async ({ capability, message, requireResponse = true, metadata = {}, parallel = false }) => {
-            // ... existing code ...
+            const addMessage = useAgentEventStore.getState().addMessage;
+            
+            try {
+                addMessage(`🔍 Searching for agent with capability: ${capability}`);
+
+                if (!cachedAgents[capability]) {
+                    cachedAgents[capability] = await protocol.findAgentsByCapability(capability.trim().toLowerCase());
+                }
+
+                if (cachedAgents[capability].length === 0) {
+                    addMessage(`❌ No agents found with capability: ${capability}`);
+                    return {
+                        type: 'error',
+                        content: `No agents found with capability: ${capability}`
+                    };
+                }
+
+                const targetAgent = cachedAgents[capability][0];
+                addMessage(`📤 Sending message to ${targetAgent.name}`);
+
+                const messageData = {
+                    type: 'request',
+                    content: message,
+                    metadata: {
+                        ...metadata,
+                        parallel
+                    },
+                    timestamp: Date.now()
+                };
+
+                if (requireResponse) {
+                    const response = await protocol.sendMessage(targetAgent.peerId, messageData);
+                    addMessage(`📥 Received response from ${targetAgent.name}`);
+                    return response;
+                } else {
+                    await protocol.sendMessage(targetAgent.peerId, messageData);
+                    addMessage(`✓ Message sent successfully to ${targetAgent.name}`);
+                    return {
+                        type: 'response',
+                        content: 'Message sent successfully'
+                    };
+                }
+            } catch (error) {
+                delete cachedAgents[capability];
+                addMessage(`❌ Communication failed: ${error.message}`);
+                return {
+                    type: 'error',
+                    content: `Communication failed: ${error.message}`
+                };
+            }
         },
     });
 }
 
-// Move all other tool creation functions here
 export function createMultiAgentCommunicationTool(protocol) {
-    // ... existing code ...
+    return new DynamicStructuredTool({
+        name: "communicate_with_multiple_agents",
+        description: "Communicate with multiple agents in parallel",
+        schema: z.object({
+            requests: z.array(z.object({
+                capability: z.string(),
+                message: z.string(),
+                metadata: z.record(z.any()).optional()
+            })).describe("Array of requests to different agents")
+        }),
+        func: async ({ requests }) => {
+            try {
+                const responses = await Promise.all(
+                    requests.map(async (request) => {
+                        const agents = await protocol.findAgentsByCapability(request.capability.trim().toLowerCase());
+                        if (agents.length === 0) {
+                            return {
+                                capability: request.capability,
+                                type: 'error',
+                                content: `No agents found with capability: ${request.capability}`
+                            };
+                        }
+
+                        const targetAgent = agents[0];
+                        const messageData = {
+                            type: 'request',
+                            content: request.message,
+                            metadata: request.metadata || {},
+                            timestamp: Date.now()
+                        };
+
+                        const response = await protocol.sendMessage(targetAgent.peerId, messageData);
+                        return {
+                            capability: request.capability,
+                            ...response
+                        };
+                    })
+                );
+
+                return JSON.stringify(responses);
+            } catch (error) {
+                return JSON.stringify({
+                    type: 'error',
+                    content: `Parallel communication failed: ${error.message}`
+                });
+            }
+        }
+    });
 }
 
 export function createAgentDiscoveryTool(protocol) {
-    // ... existing code ...
+    return new DynamicStructuredTool({
+        name: "discover_agents",
+        description: "Search for agents with specific capabilities",
+        schema: z.object({
+            capability: z.string().describe("The capability to search for (use 'flight-booking' for flight related tasks)"),
+            includeMetadata: z.boolean().optional().describe("Whether to include full agent metadata")
+        }),
+        func: async ({ capability, includeMetadata = false }) => {
+            try {
+                const agents = await protocol.findAgentsByCapability(capability.trim().toLowerCase());
+
+                if (includeMetadata) {
+                    return JSON.stringify(agents, null, 2);
+                } else {
+                    return JSON.stringify(
+                        agents.map(agent => ({
+                            name: agent.name,
+                            peerId: agent.peerId
+                        })),
+                        null,
+                        2
+                    );
+                }
+            } catch (error) {
+                return JSON.stringify({
+                    type: 'error',
+                    content: `Error discovering agents: ${error instanceof Error ? error.message : 'Unknown error'}`
+                });
+            }
+        },
+    });
 }
 
 export function createAgentWalletTool(protocol) {
-    // ... existing code ...
+    return new DynamicStructuredTool({
+        name: "get_agent_wallet",
+        description: "Get the wallet address for a specific agent capability (e.g., flight-booking, accommodation-booking)",
+        schema: z.object({
+            capability: z.string().describe("The capability to search for (e.g., 'flight-booking', 'accommodation-booking')"),
+        }),
+        func: async ({ capability }) => {
+            console.log("invoking `get_agent_wallet` with capability ", capability)
+            try {
+                const agents = await protocol.findAgentsByCapability(capability.trim().toLowerCase());
+
+                if (agents.length === 0) {
+                    return JSON.stringify({
+                        type: 'error',
+                        content: `No agents found with capability: ${capability}`
+                    });
+                }
+
+                const agent = agents[0];
+                if (!agent.walletAddress) {
+                    return JSON.stringify({
+                        type: 'error',
+                        content: `No wallet address available for agent with capability: ${capability}`
+                    });
+                }
+
+                return JSON.stringify({
+                    type: 'success',
+                    content: {
+                        capability,
+                        agentName: agent.name,
+                        walletAddress: agent.walletAddress
+                    }
+                });
+            } catch (error) {
+                return JSON.stringify({
+                    type: 'error',
+                    content: `Error getting agent wallet: ${error instanceof Error ? error.message : 'Unknown error'}`
+                });
+            }
+        },
+    });
 }
 
-// New method to get all protocol tools
 export function getProtocolTools(protocol) {
     return [
         createAgentCommunicationTool(protocol),

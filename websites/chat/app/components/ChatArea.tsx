@@ -3,12 +3,14 @@
 import { useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
+import { useAgentEventStore } from '../../../../agent-network-protocol/tools';
 import { useChat } from '../context/ChatContext';
 import EmptyChat from './EmptyChat';
 import TypingIndicator from './TypingIndicator';
 
 const ChatArea = () => {
   const { rooms, currentRoomId, isTyping } = useChat();
+  const { systemMessages, clearMessages } = useAgentEventStore();
   const currentRoom = rooms.find((room) => room.id === currentRoomId);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -17,65 +19,45 @@ const ChatArea = () => {
   };
 
   useEffect(() => {
+    console.log("systemMessages", systemMessages, clearMessages);
+  }, [systemMessages]);
+
+  useEffect(() => {
     scrollToBottom();
-  }, [currentRoom?.messages, isTyping]);
+  }, [currentRoom?.messages, isTyping, systemMessages]);
 
-  const formatErrorMessage = (content: string) => {
+
+  useEffect(() => {
+    if (!isTyping) {
+      clearMessages();
+    }
+  }, [isTyping, clearMessages]);
+
+  const formatMessage = (content: any) => {
     try {
-      // First check if there's a human-readable message after JSON errors
-      const humanMessageMatch = content.match(/}([^{].*$)/);
-      if (humanMessageMatch) {
-        const humanMessage = humanMessageMatch[1].trim();
-        if (humanMessage) {
-          // Replace double newlines with special marker
-          return humanMessage.replace(/\n\n/g, '<br/><br/>');
+      // Check if content is already a string
+      if (typeof content === 'string') {
+        try {
+          // Try to parse as JSON
+          const parsed = JSON.parse(content);
+          return parsed.content || parsed.message || content;
+        } catch {
+          // If not valid JSON, return as is
+          return content;
         }
       }
 
-      // Try to parse the content as JSON
-      const parsedContent = JSON.parse(content);
-
-      // Handle error messages
-      if (parsedContent.type === 'error') {
-        const errorMessage = parsedContent.content
-          .split(':')
-          .slice(1)
-          .join(':')
-          .trim()
-          .replace(/\. The agent.*$/, '');
-        return `Error: ${errorMessage}`;
+      // If content is an object
+      if (typeof content === 'object' && content !== null) {
+        if (content.type === 'error') {
+          return `Error: ${content.content}`;
+        }
+        return content.content || content.message || JSON.stringify(content);
       }
 
-      // Handle arrays of objects (like the flight assistant list)
-      if (Array.isArray(parsedContent)) {
-        return parsedContent
-          .map(item => `${item.name}: ${item.description}`)
-          .join('\n');
-      }
-
-      return parsedContent.content || parsedContent.message || content;
+      return String(content);
     } catch (e) {
-      // If parsing fails, check for human-readable message after JSON errors
-      const lastMessage = content.split(/}/).pop()?.trim();
-      if (lastMessage && !lastMessage.includes('{')) {
-        return lastMessage.replace(/\n\n/g, '<br/><br/>');
-      }
-      
-      // If no human message found, try to extract error message
-      if (content.includes('{"type":"error"')) {
-        const match = content.match(/{"type":"error","content":"([^"]+)"}/);
-        if (match) {
-          const errorMessage = match[1]
-            .split(':')
-            .slice(1)
-            .join(':')
-            .trim()
-            .replace(/\. The agent.*$/, '');
-          return `Error: ${errorMessage}`;
-        }
-      }
-      // Return original content if all parsing fails
-      return content.replace(/\n\n/g, '<br/><br/>');
+      return String(content);
     }
   };
 
@@ -90,22 +72,20 @@ const ChatArea = () => {
           {currentRoom?.messages.map((message, index) => (
             <div
               key={index}
-              className={`flex ${
-                message.type === 'user' 
-                  ? 'justify-end' 
-                  : message.type === 'system' 
-                    ? 'justify-center' 
+              className={`flex ${message.type === 'user'
+                  ? 'justify-end'
+                  : message.type === 'system'
+                    ? 'justify-center'
                     : 'justify-start'
-              }`}
+                }`}
             >
               <div
-                className={`${
-                  message.type === 'user'
+                className={`${message.type === 'user'
                     ? 'bg-[#C4CAFF] backdrop-blur-sm border-[1px] border-white text-black ml-auto max-w-[70%]'
                     : message.type === 'system'
-                    ? 'bg-gray-100 text-gray-600 text-sm px-4 py-2 rounded-full'
-                    : 'bg-white/50 backdrop-blur-sm border-[1px] border-white text-black shadow mr-auto max-w-[70%]'
-                } rounded-lg p-3 prose prose-sm max-w-none`}
+                      ? 'bg-gray-100 text-gray-600 text-sm px-4 py-2 rounded-full'
+                      : 'bg-white/50 backdrop-blur-sm border-[1px] border-white text-black shadow mr-auto max-w-[70%]'
+                  } rounded-lg p-3 prose prose-sm max-w-none`}
               >
                 <ReactMarkdown
                   rehypePlugins={[rehypeRaw]}
@@ -121,8 +101,16 @@ const ChatArea = () => {
                     br: ({ node, ...props }) => <br className="block my-2" {...props} />,
                   }}
                 >
-                  {formatErrorMessage(message.content)}
+                  {formatMessage(message.content)}
                 </ReactMarkdown>
+              </div>
+            </div>
+          ))}
+          {/* System messages during typing */}
+          {isTyping && systemMessages.map((msg: any) => (
+            <div key={msg.id} className="flex justify-center animate-fade-in">
+              <div className="bg-gray-100 text-gray-600 text-sm px-4 py-2 rounded-full">
+                {msg.content}
               </div>
             </div>
           ))}
