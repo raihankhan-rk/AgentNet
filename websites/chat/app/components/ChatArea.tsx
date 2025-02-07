@@ -19,6 +19,64 @@ const ChatArea = () => {
     scrollToBottom();
   }, [currentRoom?.messages, isTyping]);
 
+  const formatErrorMessage = (content: string) => {
+    try {
+      // First check if there's a human-readable message after JSON errors
+      const humanMessageMatch = content.match(/}([^{].*$)/);
+      if (humanMessageMatch) {
+        const humanMessage = humanMessageMatch[1].trim();
+        if (humanMessage) {
+          return humanMessage;
+        }
+      }
+
+      // Try to parse the content as JSON
+      const parsedContent = JSON.parse(content);
+
+      // Handle error messages
+      if (parsedContent.type === 'error') {
+        const errorMessage = parsedContent.content
+          .split(':')
+          .slice(1)
+          .join(':')
+          .trim()
+          .replace(/\. The agent.*$/, '');
+        return `Error: ${errorMessage}`;
+      }
+
+      // Handle arrays of objects (like the flight assistant list)
+      if (Array.isArray(parsedContent)) {
+        return parsedContent
+          .map(item => `${item.name}: ${item.description}`)
+          .join('\n');
+      }
+
+      return parsedContent.content || parsedContent.message || content;
+    } catch (e) {
+      // If parsing fails, check for human-readable message after JSON errors
+      const lastMessage = content.split(/}/).pop()?.trim();
+      if (lastMessage && !lastMessage.includes('{')) {
+        return lastMessage;
+      }
+      
+      // If no human message found, try to extract error message
+      if (content.includes('{"type":"error"')) {
+        const match = content.match(/{"type":"error","content":"([^"]+)"}/);
+        if (match) {
+          const errorMessage = match[1]
+            .split(':')
+            .slice(1)
+            .join(':')
+            .trim()
+            .replace(/\. The agent.*$/, '');
+          return `Error: ${errorMessage}`;
+        }
+      }
+      // Return original content if all parsing fails
+      return content;
+    }
+  };
+
   if (!currentRoom?.messages.length) {
     return <EmptyChat />;
   }
@@ -44,10 +102,10 @@ const ChatArea = () => {
                     ? 'bg-[#C4CAFF] backdrop-blur-sm border-[1px] border-white text-black ml-auto max-w-[70%]'
                     : message.type === 'system'
                     ? 'bg-gray-100 text-gray-600 text-sm px-4 py-2 rounded-full'
-                    : 'bg-white/50 backdrop-blur-sm border-[1px] border-white text-black shadow mr-auto max-w-[70%]'
+                    : 'bg-white/50 backdrop-blur-sm border-[1px] border-white text-black shadow mr-auto max-w-[50vw]'
                 } rounded-lg p-3 prose prose-sm max-w-none`}
               >
-                <ReactMarkdown>{message.content}</ReactMarkdown>
+                <ReactMarkdown>{formatErrorMessage(message.content)}</ReactMarkdown>
               </div>
             </div>
           ))}
