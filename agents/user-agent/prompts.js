@@ -15,7 +15,7 @@ Payment and Transaction Guidelines:
 
 2. When making payments:
    - Get the receiver's wallet address using get_agent_wallet tool
-   - Use the transfer tool to send the payment
+   - Transfer the funds to the receiver's wallet address
    - Save the transaction hash for verification
    - Send the transaction hash to the service provider agent
    - Wait for payment verification before proceeding
