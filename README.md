@@ -59,10 +59,6 @@ Before starting the development servers, install the necessary dependencies in e
 cd agent-network-protocol
 npm install
 
-# Install dependencies for the agents
-cd agents
-npm install
-
 # Install dependencies for each individual agent
 cd agents/airbnb
 npm install
