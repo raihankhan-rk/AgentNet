@@ -15,7 +15,7 @@ To demonstrate its potential, we’ve introduced three simulated agents as a pro
 ## 🏗️ Project Structure
 
 ```
-web4/
+AgentNet/
 ├── agent-network-protocol/    # Core P2P communication protocol
 ├── agents/                    # AI agent implementations
 │   ├── airbnb/               # Airbnb booking agent
