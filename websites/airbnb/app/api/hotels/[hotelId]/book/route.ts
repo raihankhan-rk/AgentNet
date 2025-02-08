@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
-import fs from 'fs';
-import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
+import { bookHotel, getHotelById } from '@/services/hotelService';
 
 export async function POST(request: Request) {
   try {
@@ -9,11 +8,8 @@ export async function POST(request: Request) {
     const hotelId = request.url.split('/hotels/')[1].split('/')[0];
     
     const { checkIn, checkOut, guests } = await request.json();
-    const filePath = path.join(process.cwd(), 'data', 'hotels.json');
-    const fileContents = fs.readFileSync(filePath, 'utf8');
-    const data = JSON.parse(fileContents);
 
-    const hotel = data.hotels.find((h: any) => h.id === hotelId);
+    const hotel = await getHotelById(hotelId);
     if (!hotel) {
       return NextResponse.json({ error: 'Hotel not found' }, { status: 404 });
     }
@@ -27,23 +23,18 @@ export async function POST(request: Request) {
     const booking = {
       id: uuidv4(),
       userId: 'user123', // In a real app, this would come from authentication
+      hotelId,
       checkIn,
       checkOut,
       guests,
       totalPrice: hotel.price * nights
     };
 
-    hotel.bookings.push(booking);
-    
-    // Remove booked dates from availableDates
-    hotel.availableDates = hotel.availableDates.filter((date: any) => 
-      date < checkIn || date > checkOut
-    );
-
-    fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
+    await bookHotel(hotelId, booking);
 
     return NextResponse.json({ success: true, booking });
   } catch (error) {
+    console.error('Booking error:', error);
     return NextResponse.json({ error: 'Booking failed' }, { status: 500 });
   }
 } 

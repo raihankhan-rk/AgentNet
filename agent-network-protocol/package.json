@@ -1,9 +1,22 @@
 {
-    "name": "protocol",
+    "name": "agent-network-protocol",
     "version": "1.0.0",
-    "description": "",
+    "description": "Agent network communication protocol",
     "type": "module",
-    "main": "index.js",
+    "main": "./index.js",
+    "types": "./index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./index.d.ts",
+            "import": "./index.js",
+            "require": "./index.js"
+        }
+    },
+    "files": [
+        "index.js",
+        "index.d.ts",
+        "registryServer.js"
+    ],
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1",
         "start": "nodemon my_file.js"
@@ -24,9 +37,11 @@
         "@libp2p/tcp": "^10.0.15",
         "axios": "^1.7.9",
         "ethers": "^5.7.2",
+        "cors": "^2.8.5",
         "express": "^4.21.2",
         "libp2p": "^2.5.0",
         "peer-id": "^0.16.0",
-        "zod": "^3.24.1"
+        "zod": "^3.24.1",
+        "zustand": "^5.0.3"
     }
 }

@@ -1,23 +1,23 @@
 import { CdpAgentkit } from "@coinbase/cdp-agentkit-core";
+import { CdpToolkit } from "@coinbase/cdp-langchain";
 import { HumanMessage } from "@langchain/core/messages";
 import { MemorySaver } from "@langchain/langgraph";
 import { createReactAgent } from "@langchain/langgraph/prebuilt";
 import { ChatOpenAI } from "@langchain/openai";
 import { DEFAULT_SYSTEM_PROMPT } from "./prompts.js";
-import { createAgentCommunicationTool, createAgentDiscoveryTool, createMultiAgentCommunicationTool, createAgentWalletTool } from "./tools.js";
 
-export class OrchestratorAgent {
-    constructor(config, protocol) {
-        this.config = config;
+export class UserAgent {
+    constructor(agentConfig, protocol) {
+        this.agentConfig = agentConfig;
         this.protocol = protocol;
         this.agent = null;
-        this.memory = new MemorySaver();
+        this.config = null;
         this.ephemeralNode = null;
         this.runnableConfig = {
             configurable: {
-                thread_id: "Orchestrator_Agent",
+                thread_id: "User_Agent",
                 metadata: {
-                    agent_type: "orchestrator",
+                    agent_type: "user",
                 },
             },
         };
@@ -25,28 +25,33 @@ export class OrchestratorAgent {
 
     async initialize() {
         const llm = new ChatOpenAI({
-            model: this.config.model || "gpt-4o-mini",
+            model: this.agentConfig.model || "gpt-4o-mini",
             temperature: 0.7,
         });
 
-        // Initialize CDP AgentKit
         const agentkit = await CdpAgentkit.configureWithWallet({
-            cdpWalletData: this.config.cdpWalletData || "",
-            networkId: this.config.networkId || "base-sepolia",
+            cdpWalletData: this.agentConfig.cdpWalletData || "",
+            networkId: this.agentConfig.networkId || "base-sepolia",
         });
 
-        const tools = [
-            createAgentCommunicationTool(this.protocol),
-            createMultiAgentCommunicationTool(this.protocol),
-            createAgentDiscoveryTool(this.protocol),
-            createAgentWalletTool(this.protocol)
-        ];
+        this.agentConfig = {
+            ...this.agentConfig,
+            walletAddress: this.agentConfig.cdpWalletData ? 
+                JSON.parse(this.agentConfig.cdpWalletData).defaultAddressId :
+                undefined
+        }
+
+        // Setup tools
+        const cdpToolkit = new CdpToolkit(agentkit);
+        const cdpTools = cdpToolkit.getTools();
+        const protocolTools = this.protocol.getTools(); // Get tools from protocol
+        const tools = [...cdpTools, ...protocolTools];
 
         this.agent = createReactAgent({
             llm,
             tools,
-            checkpointSaver: this.memory,
-            messageModifier: this.config.systemPrompt || DEFAULT_SYSTEM_PROMPT,
+            checkpointSaver: new MemorySaver(),
+            messageModifier: this.agentConfig.systemPrompt || DEFAULT_SYSTEM_PROMPT,
         });
     }
 
@@ -76,7 +81,7 @@ export class OrchestratorAgent {
         try {
             await this.createEphemeralNode();
 
-            console.log('\n[DEBUG] Orchestrator processing message:', message);
+            console.log('\n[DEBUG] User Agent processing message:', message);
             const stream = await this.agent.stream(
                 { messages: [new HumanMessage(message)] },
                 this.runnableConfig
@@ -91,7 +96,7 @@ export class OrchestratorAgent {
                 }
             }
 
-            console.log('[DEBUG] Orchestrator finished processing');
+            console.log('[DEBUG] User Agent finished processing');
             // Clear line and move cursor up for cleaner output
             process.stdout.write('\x1b[2K\r');
             return {
@@ -99,7 +104,7 @@ export class OrchestratorAgent {
                 content: response.trim(),
             };
         } catch (error) {
-            console.error('\n[ERROR] Orchestrator Agent error:', error);
+            console.error('\n[ERROR] User Agent error:', error);
             return {
                 type: "error",
                 content: `Error processing request: ${error instanceof Error ? error.message : "Unknown error"

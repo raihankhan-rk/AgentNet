@@ -1,21 +1,36 @@
 import dotenv from "dotenv";
+import path from "path";
 import * as readline from "readline";
+import { fileURLToPath } from 'url';
 import AgentNetworkProtocol from "../agent-network-protocol/index.js";
 import { AirbnbAgent } from "./airbnb/agent.js";
 import { FlightyAgent } from "./flighty/agent.js";
-import { OrchestratorAgent } from "./orchestrator/agent.js";
+import { UserAgent } from "./user-agent/agent.js";
+import { loadEnvFromFolder } from "./utils/loadEnv.js";
+
+// Get the directory path for the current module
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 dotenv.config();
 
 async function main() {
     try {
+        // Load root .env first (for shared variables)
+        loadEnvFromFolder(path.join(__dirname, '../../')); // Go up to websites/chat
+        
+        // Load agent-specific .env files with correct paths
+        const flightyEnv = loadEnvFromFolder(path.join(__dirname, '../agents/flighty'));
+        const airbnbEnv = loadEnvFromFolder(path.join(__dirname, '../agents/airbnb'));
+        const userEnv = loadEnvFromFolder(path.join(__dirname, '../agents/user-agent'));
+
         const protocol = new AgentNetworkProtocol();
         await protocol.initialize();
 
         console.log('Initializing Flighty Agent...');
         const flightyAgent = new FlightyAgent({
-            networkId: process.env.NETWORK_ID || "base-sepolia",
+            networkId: flightyEnv.NETWORK_ID || process.env.NETWORK_ID || "base-sepolia",
             model: "gpt-4o-mini",
+            cdpWalletData: flightyEnv.CDP_WALLET_DATA,
         });
         await flightyAgent.initialize();
 
@@ -31,6 +46,8 @@ async function main() {
         console.log('Initializing Airbnb Agent...');
         const airbnbAgent = new AirbnbAgent({
             model: "gpt-4o-mini",
+            cdpWalletData: airbnbEnv.CDP_WALLET_DATA,
+            networkId: airbnbEnv.NETWORK_ID || process.env.NETWORK_ID || "base-sepolia",
         });
         await airbnbAgent.initialize();
 
@@ -45,34 +62,37 @@ async function main() {
 
         await new Promise(resolve => setTimeout(resolve, 2000));
 
-        const orchestratorAgent = new OrchestratorAgent({
+        console.log('Initializing User Agent...');
+        const userAgent = new UserAgent({
             model: "gpt-4o-mini",
+            cdpWalletData: userEnv.CDP_WALLET_DATA,
+            networkId: userEnv.NETWORK_ID || process.env.NETWORK_ID || "base-sepolia",
         }, protocol);
-        await orchestratorAgent.initialize();
+        await userAgent.initialize();
 
         const rl = readline.createInterface({
             input: process.stdin,
             output: process.stdout,
         });
 
-        console.log('\n=== Travel Assistant Started ===');
-        console.log('Type your travel-related questions below.');
+        console.log('\n=== User Agent Started ===');
+        console.log('Type your questions below.');
         console.log('Type "exit" to end the conversation.\n');
 
         const askQuestion = () => {
             rl.question("\nYou: ", async (input) => {
                 if (input.toLowerCase() === "exit") {
                     console.log('\n[DEBUG] Shutting down chat session...');
-                    await orchestratorAgent.cleanup();
+                    await userAgent.cleanup();
                     await protocol.stop();
                     console.log('[DEBUG] Chat session ended, all resources cleaned up');
-                    console.log('\n=== Travel Assistant Stopped ===\n');
+                    console.log('\n=== User Agent Stopped ===\n');
                     rl.close();
                     return;
                 }
 
                 try {
-                    const response = await orchestratorAgent.handleMessage(input);
+                    const response = await userAgent.handleMessage(input);
                     // Add a newline before response for cleaner separation
                     console.log('\nAssistant:', response.content);
                 } catch (error) {

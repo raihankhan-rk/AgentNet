@@ -1,17 +1,12 @@
 import { NextResponse } from 'next/server';
-import fs from 'fs';
-import path from 'path';
+import { getAllHotels } from '@/services/hotelService';
 
 export async function GET() {
   try {
-    const filePath = path.join(process.cwd(), 'data', 'hotels.json');
-    const fileContents = fs.readFileSync(filePath, 'utf8');
-    const data = JSON.parse(fileContents);
-
-    // In a real app, you would filter by the authenticated user's ID
+    const hotels = await getAllHotels();
     const userId = 'user123';
 
-    const bookingsWithHotels = data.hotels.flatMap((hotel: any) => {
+    const bookingsWithHotels = hotels.flatMap((hotel: any) => {
       return hotel.bookings
         .filter((booking: any) => booking.userId === userId)
         .map((booking: any) => ({

@@ -8,7 +8,7 @@
       "departureLocation": "New York",
       "arrivalLocation": "London",
       "airlineName": "Delta Airlines",
-      "ticketPrice": 500
+      "ticketPrice": 0.0034
     },
     {
       "id": "FL002",
@@ -18,7 +18,7 @@
       "departureLocation": "Los Angeles",
       "arrivalLocation": "Tokyo",
       "airlineName": "Japan Airlines",
-      "ticketPrice": 850
+      "ticketPrice": 0.0028
     },
     {
       "id": "FL003",
@@ -28,7 +28,7 @@
       "departureLocation": "Paris",
       "arrivalLocation": "Dubai",
       "airlineName": "Emirates",
-      "ticketPrice": 680
+      "ticketPrice": 0.0045
     },
     {
       "id": "FL004",
@@ -38,7 +38,7 @@
       "departureLocation": "Berlin",
       "arrivalLocation": "Rome",
       "airlineName": "Lufthansa",
-      "ticketPrice": 220
+      "ticketPrice": 0.0039
     },
     {
       "id": "FL005",
@@ -48,7 +48,7 @@
       "departureLocation": "Singapore",
       "arrivalLocation": "London",
       "airlineName": "Singapore Airlines",
-      "ticketPrice": 920
+      "ticketPrice": 0.0042
     },
     {
       "id": "FL006",
@@ -58,7 +58,7 @@
       "departureLocation": "Sydney",
       "arrivalLocation": "Hong Kong",
       "airlineName": "Qantas",
-      "ticketPrice": 580
+      "ticketPrice": 0.0031
     },
     {
       "id": "FL007",
@@ -68,7 +68,7 @@
       "departureLocation": "Amsterdam",
       "arrivalLocation": "Barcelona",
       "airlineName": "KLM",
-      "ticketPrice": 180
+      "ticketPrice": 0.0025
     },
     {
       "id": "FL008",
@@ -78,7 +78,7 @@
       "departureLocation": "Chicago",
       "arrivalLocation": "Paris",
       "airlineName": "American Airlines",
-      "ticketPrice": 620
+      "ticketPrice": 0.0037
     },
     {
       "id": "FL009",
@@ -88,7 +88,7 @@
       "departureLocation": "Dubai",
       "arrivalLocation": "Singapore",
       "airlineName": "Emirates",
-      "ticketPrice": 540
+      "ticketPrice": 0.0033
     },
     {
       "id": "FL010",
@@ -98,7 +98,7 @@
       "departureLocation": "London",
       "arrivalLocation": "Madrid",
       "airlineName": "British Airways",
-      "ticketPrice": 190
+      "ticketPrice": 0.0026
     },
     {
       "id": "FL011",
@@ -108,7 +108,7 @@
       "departureLocation": "Toronto",
       "arrivalLocation": "Seoul",
       "airlineName": "Air Canada",
-      "ticketPrice": 890
+      "ticketPrice": 0.0044
     },
     {
       "id": "FL012",
@@ -118,7 +118,7 @@
       "departureLocation": "Rome",
       "arrivalLocation": "Athens",
       "airlineName": "Alitalia",
-      "ticketPrice": 160
+      "ticketPrice": 0.0023
     },
     {
       "id": "FL013",
@@ -128,7 +128,7 @@
       "departureLocation": "Mumbai",
       "arrivalLocation": "New York",
       "airlineName": "Air India",
-      "ticketPrice": 780
+      "ticketPrice": 0.0041
     },
     {
       "id": "FL014",
@@ -138,7 +138,7 @@
       "departureLocation": "Berlin",
       "arrivalLocation": "Paris",
       "airlineName": "Air France",
-      "ticketPrice": 170
+      "ticketPrice": 0.0024
     },
     {
       "id": "FL015",
@@ -148,7 +148,7 @@
       "departureLocation": "Los Angeles",
       "arrivalLocation": "Sydney",
       "airlineName": "United Airlines",
-      "ticketPrice": 950
+      "ticketPrice": 0.0047
     },
     {
       "id": "FL016",
@@ -158,7 +158,7 @@
       "departureLocation": "Madrid",
       "arrivalLocation": "London",
       "airlineName": "Iberia",
-      "ticketPrice": 195
+      "ticketPrice": 0.0027
     },
     {
       "id": "FL017",
@@ -168,7 +168,7 @@
       "departureLocation": "Hong Kong",
       "arrivalLocation": "San Francisco",
       "airlineName": "Cathay Pacific",
-      "ticketPrice": 820
+      "ticketPrice": 0.0043
     },
     {
       "id": "FL018",
@@ -178,7 +178,7 @@
       "departureLocation": "Amsterdam",
       "arrivalLocation": "Copenhagen",
       "airlineName": "KLM",
-      "ticketPrice": 150
+      "ticketPrice": 0.0022
     },
     {
       "id": "FL019",
@@ -188,7 +188,7 @@
       "departureLocation": "Tokyo",
       "arrivalLocation": "London",
       "airlineName": "British Airways",
-      "ticketPrice": 880
+      "ticketPrice": 0.0046
     },
     {
       "id": "FL020",
@@ -198,7 +198,7 @@
       "departureLocation": "Barcelona",
       "arrivalLocation": "Rome",
       "airlineName": "Vueling",
-      "ticketPrice": 140
+      "ticketPrice": 0.0021
     },
     {
       "id": "FL021",
@@ -208,7 +208,7 @@
       "departureLocation": "New York",
       "arrivalLocation": "Dubai",
       "airlineName": "Emirates",
-      "ticketPrice": 750
+      "ticketPrice": 0.0038
     },
     {
       "id": "FL022",
@@ -218,7 +218,7 @@
       "departureLocation": "Paris",
       "arrivalLocation": "Stockholm",
       "airlineName": "Air France",
-      "ticketPrice": 210
+      "ticketPrice": 0.0029
     },
     {
       "id": "FL023",
@@ -228,7 +228,7 @@
       "departureLocation": "Singapore",
       "arrivalLocation": "Los Angeles",
       "airlineName": "Singapore Airlines",
-      "ticketPrice": 920
+      "ticketPrice": 0.0048
     },
     {
       "id": "FL024",
@@ -238,7 +238,7 @@
       "departureLocation": "Munich",
       "arrivalLocation": "Vienna",
       "airlineName": "Lufthansa",
-      "ticketPrice": 130
+      "ticketPrice": 0.0020
     },
     {
       "id": "FL025",
@@ -248,7 +248,7 @@
       "departureLocation": "Seoul",
       "arrivalLocation": "Paris",
       "airlineName": "Korean Air",
-      "ticketPrice": 840
+      "ticketPrice": 0.0045
     },
     {
       "id": "FL026",
@@ -258,7 +258,7 @@
       "departureLocation": "London",
       "arrivalLocation": "Dublin",
       "airlineName": "Ryanair",
-      "ticketPrice": 120
+      "ticketPrice": 0.0022
     },
     {
       "id": "FL027",
@@ -268,7 +268,7 @@
       "departureLocation": "San Francisco",
       "arrivalLocation": "Tokyo",
       "airlineName": "United Airlines",
-      "ticketPrice": 870
+      "ticketPrice": 0.0046
     },
     {
       "id": "FL028",
@@ -278,7 +278,7 @@
       "departureLocation": "Rome",
       "arrivalLocation": "Madrid",
       "airlineName": "Iberia",
-      "ticketPrice": 175
+      "ticketPrice": 0.0025
     },
     {
       "id": "FL029",
@@ -288,7 +288,7 @@
       "departureLocation": "Dubai",
       "arrivalLocation": "New York",
       "airlineName": "Emirates",
-      "ticketPrice": 790
+      "ticketPrice": 0.0042
     },
     {
       "id": "FL030",
@@ -298,7 +298,7 @@
       "departureLocation": "Amsterdam",
       "arrivalLocation": "Berlin",
       "airlineName": "KLM",
-      "ticketPrice": 165
+      "ticketPrice": 0.0024
     }
   ]
 } 

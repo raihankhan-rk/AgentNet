@@ -1,33 +1,30 @@
 import dotenv from "dotenv";
 import * as readline from "readline";
 import AgentNetworkProtocol from "../../agent-network-protocol/index.js";
+import { AirbnbAgent } from "./agent.js";
 import { getAgentEnv } from "../utils/loadEnv.js";
-import { FlightyAgent } from "./agent.js";
 
 dotenv.config();
 
 async function main() {
     const localMode = process.argv.includes("--local");
     const agentEnv = getAgentEnv();
-    
+
     try {
-        // Create and initialize the protocol
         const protocol = new AgentNetworkProtocol();
         await protocol.initialize();
 
-        // Initialize Flighty Agent
-        console.log('Initializing Flighty Agent...');
-        const flightyAgent = new FlightyAgent({
+        console.log('Initializing Airbnb Agent...');
+        const airbnbAgent = new AirbnbAgent({
+            model: "gpt-4o-mini",
             cdpWalletData: agentEnv.CDP_WALLET_DATA,
             networkId: agentEnv.NETWORK_ID || "base-sepolia",
-            model: "gpt-4o-mini",
         });
-        await flightyAgent.initialize();
+        await airbnbAgent.initialize();
 
         if (localMode) {
-            // Local testing mode
-            console.log('\n=== Flighty Assistant Local Testing Mode ===');
-            console.log('Type your flight-related questions below.');
+            console.log('\n=== Airbnb Assistant Local Testing Mode ===');
+            console.log('Type your accommodation-related questions below.');
             console.log('Type "exit" to end the conversation.\n');
 
             const rl = readline.createInterface({
@@ -44,7 +41,7 @@ async function main() {
                     }
 
                     try {
-                        const response = await flightyAgent.handleMessage(input);
+                        const response = await airbnbAgent.handleMessage(input);
                         console.log('\nAssistant:', response.content);
                     } catch (error) {
                         console.error('\nError:', error.message);
@@ -56,17 +53,16 @@ async function main() {
 
             askQuestion();
         } else {
-            // Deployment mode
-            console.log('Deploying Flighty Agent...');
-            const deployment = await protocol.deployAgent(flightyAgent, {
-                name: "Flighty Travel Assistant",
-                description: "An AI agent that helps users search and book flights",
-                capabilities: ["flight-booking"],
+            console.log('Deploying Airbnb Agent...');
+            const deployment = await protocol.deployAgent(airbnbAgent, {
+                name: "Airbnb Accommodation Assistant",
+                description: "An AI agent that helps users search and book accommodations",
+                capabilities: ["accommodation-booking"],
             });
-            console.log('Flighty Agent deployed with peerId:', deployment.peerId);
+            console.log('Airbnb Agent deployed with peerId:', deployment.peerId);
         }
     } catch (error) {
-        console.error("Failed to start Flighty agent:", error);
+        console.error("Failed to start Airbnb agent:", error);
         process.exit(1);
     }
 }

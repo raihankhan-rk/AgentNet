@@ -6,18 +6,47 @@ import Icons from '@/assets/Icons';
 const TextInput = () => {
   const [input, setInput] = useState('');
   const { addMessage, setIsTyping } = useChat();
+  const [isInitialized, setIsInitialized] = useState(true);
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (input.trim()) {
-      addMessage(input, 'user');
+      const userMessage = input.trim();
+      addMessage(userMessage, 'user');
       setInput('');
       
-      // Simulate agent typing and response
       setIsTyping(true);
-      setTimeout(() => {
+      try {
+        const response = await fetch('/api/chat', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ message: userMessage }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to get response');
+        }
+
+        const data = await response.json();
+        
+        if (typeof data === 'object' && data !== null) {
+          if ('toolInvocation' in data) {
+            addMessage(`🛠️ Using tool: ${data.toolInvocation}`, 'system');
+          }
+          if ('agentConnection' in data) {
+            addMessage(`🤝 Connecting to ${data.agentConnection}...`, 'system');
+          }
+          if ('content' in data) {
+            addMessage(data.content, 'agent');
+          }
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        addMessage('Sorry, there was an error processing your request.', 'system');
+      } finally {
         setIsTyping(false);
-        addMessage('This is a sample response from the agent.', 'agent');
-      }, 2000);
+      }
     }
   };
 
@@ -29,7 +58,7 @@ const TextInput = () => {
   };
 
   return (
-    <div className=" p-4 flex gap-2 items-center">
+    <div className="p-4 flex gap-2 items-center">
       <div className="flex-1 flex gap-2 items-center bg-white px-2 pl-0 h-12 border rounded-lg overflow-hidden">
         <input
           type="text"
