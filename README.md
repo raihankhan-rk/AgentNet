@@ -1,5 +1,4 @@
-# AgentNet - The Decentralized Protocol For AI Agents
-<img src="star.png" alt="AgentNet Logo" width="24"/>
+# AgentNet - The Decentralized Protocol For AI Agents <img src="star.png" alt="AgentNet Logo" width="24"/>
 
 A decentralized open protocol powered by libp2p, designed for seamless, decentralized agentic communication at scale. 🚀
 
