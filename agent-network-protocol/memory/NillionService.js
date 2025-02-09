@@ -6,7 +6,7 @@ import schema from '../../schemas/userContextSchema.js';
 export class NillionService {
     constructor() {
         this.initialized = true;
-        this.schemaId = "fe75f172-ece1-4183-9b3a-942a60e4ab2a";
+        this.schemaId = "bbbcd18c-e102-4b24-86f0-7738219ea6dd";
         this.api = axios.create({
             baseURL: 'https://nildb-demo.nillion.network/api/v1',
             headers: {
