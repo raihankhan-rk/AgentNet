@@ -1,29 +1,5 @@
-import { create } from 'zustand';
 import { DynamicStructuredTool } from "@langchain/core/tools";
 import z from "zod";
-
-export const useAgentEventStore = create((set) => ({
-  systemMessages: [],
-  addMessage: (content) => 
-    set((state) => ({
-      systemMessages: [
-        ...state.systemMessages,
-        { 
-          id: Math.random().toString(36).substr(2, 9),
-          content,
-          timestamp: Date.now()
-        }
-      ]
-    })),
-  clearMessages: () => set({ systemMessages: [] })
-}));
-
-export const AgentEventTypes = {
-  DISCOVERY: 'agent:discovery',
-  COMMUNICATION: 'agent:communication',
-  RESPONSE: 'agent:response',
-  ERROR: 'agent:error'
-};
 
 export function createAgentCommunicationTool(protocol) {
     let cachedAgents = {};
@@ -39,17 +15,14 @@ export function createAgentCommunicationTool(protocol) {
             parallel: z.boolean().optional().describe("Whether to run in parallel with other requests")
         }),
         func: async ({ capability, message, requireResponse = true, metadata = {}, parallel = false }) => {
-            const addMessage = useAgentEventStore.getState().addMessage;
             
             try {
-                addMessage(`🔍 Searching for agent with capability: ${capability}`);
 
                 if (!cachedAgents[capability]) {
                     cachedAgents[capability] = await protocol.findAgentsByCapability(capability.trim().toLowerCase());
                 }
 
                 if (cachedAgents[capability].length === 0) {
-                    addMessage(`❌ No agents found with capability: ${capability}`);
                     return {
                         type: 'error',
                         content: `No agents found with capability: ${capability}`
@@ -57,7 +30,6 @@ export function createAgentCommunicationTool(protocol) {
                 }
 
                 const targetAgent = cachedAgents[capability][0];
-                addMessage(`📤 Sending message to ${targetAgent.name}`);
 
                 const messageData = {
                     type: 'request',
@@ -71,11 +43,9 @@ export function createAgentCommunicationTool(protocol) {
 
                 if (requireResponse) {
                     const response = await protocol.sendMessage(targetAgent.peerId, messageData);
-                    addMessage(`📥 Received response from ${targetAgent.name}`);
                     return response;
                 } else {
                     await protocol.sendMessage(targetAgent.peerId, messageData);
-                    addMessage(`✓ Message sent successfully to ${targetAgent.name}`);
                     return {
                         type: 'response',
                         content: 'Message sent successfully'
@@ -83,7 +53,6 @@ export function createAgentCommunicationTool(protocol) {
                 }
             } catch (error) {
                 delete cachedAgents[capability];
-                addMessage(`❌ Communication failed: ${error.message}`);
                 return {
                     type: 'error',
                     content: `Communication failed: ${error.message}`

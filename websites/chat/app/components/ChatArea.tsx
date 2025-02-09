@@ -3,14 +3,12 @@
 import { useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
-import { useAgentEventStore } from '../../../../agent-network-protocol/tools';
 import { useChat } from '../context/ChatContext';
 import EmptyChat from './EmptyChat';
 import TypingIndicator from './TypingIndicator';
 
 const ChatArea = () => {
   const { rooms, currentRoomId, isTyping } = useChat();
-  const { systemMessages, clearMessages } = useAgentEventStore();
   const currentRoom = rooms.find((room) => room.id === currentRoomId);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -18,20 +16,11 @@ const ChatArea = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  useEffect(() => {
-    console.log("systemMessages", systemMessages, clearMessages);
-  }, [systemMessages]);
 
   useEffect(() => {
     scrollToBottom();
-  }, [currentRoom?.messages, isTyping, systemMessages]);
+  }, [currentRoom?.messages, isTyping]);
 
-
-  useEffect(() => {
-    if (!isTyping) {
-      clearMessages();
-    }
-  }, [isTyping, clearMessages]);
 
   const formatMessage = (content: any) => {
     try {
@@ -103,14 +92,6 @@ const ChatArea = () => {
                 >
                   {formatMessage(message.content)}
                 </ReactMarkdown>
-              </div>
-            </div>
-          ))}
-          {/* System messages during typing */}
-          {isTyping && systemMessages.map((msg: any) => (
-            <div key={msg.id} className="flex justify-center animate-fade-in">
-              <div className="bg-gray-100 text-gray-600 text-sm px-4 py-2 rounded-full">
-                {msg.content}
               </div>
             </div>
           ))}
