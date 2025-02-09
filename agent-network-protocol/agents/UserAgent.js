@@ -5,6 +5,8 @@ import { MemorySaver } from "@langchain/langgraph";
 import { createReactAgent } from "@langchain/langgraph/prebuilt";
 import { ChatOpenAI } from "@langchain/openai";
 
+// import { v4 as uuidv4 } from 'uuid';
+
 export class UserAgent {
     constructor(agentConfig, protocol) {
         this.agentConfig = agentConfig;
@@ -87,19 +89,19 @@ export class UserAgent {
                 { messages: [new HumanMessage(message)] },
                 this.config
             );
+
+            this.protocol.addChatMessage(this.agentConfig.walletAddress, {sender: "user", message: message});
     
             let response = "";
             for await (const chunk of stream) {
-                // Only include the final response content, not the intermediate data
                 if ("agent" in chunk && chunk.agent.messages[0].content) {
                     const content = chunk.agent.messages[0].content;
-                    // Skip if the content is JSON-like
                     if (!content.startsWith('{') && !content.startsWith('[')) {
                         response = content;
+                        this.protocol.addChatMessage(this.agentConfig.walletAddress, {sender: "agent", message: response});
                     }
                 } else if ("tools" in chunk && chunk.tools.messages[0].content) {
                     const content = chunk.tools.messages[0].content;
-                    // Skip if the content is JSON-like
                     if (!content.startsWith('{') && !content.startsWith('[')) {
                         response = content;
                     }
@@ -126,7 +128,6 @@ export class UserAgent {
             await this.destroyEphemeralNode();
             
             if (this.agent) {
-                // Clean up any agent-specific resources
                 const memory = this.agent.checkpointSaver;
                 if (memory) {
                     await memory.clear();
@@ -159,7 +160,6 @@ export class UserAgent {
     }
 
     getCustomTools() {
-        // Override this method in derived classes to add custom tools
         return [];
     }
 

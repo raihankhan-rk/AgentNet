@@ -26,6 +26,8 @@ async function initializeAgents() {
     const protocol = new AgentNetworkProtocol();
     await protocol.initialize();
 
+    const mockWalletAddress = "0x742d35Cc6634C0532925a3b844Bc454e4438f44e";
+
     const env = loadEnvFromFolder();
 
     // Initialize system agents
@@ -93,6 +95,7 @@ async function initializeAgents() {
         cdpApiKeyName: env.CDP_API_KEY_NAME || "",
         cdpApiKeyPrivateKey: env.CDP_API_KEY_PRIVATE_KEY || "",
         systemPrompt: DEFAULT_SYSTEM_PROMPT,
+        walletAddress: mockWalletAddress,
         threadId: "User_Agent"
     });
 

@@ -1,7 +1,9 @@
 "use client"
+
 import React, { useState, KeyboardEvent } from 'react';
 import { useChat } from '../context/ChatContext';
 import Icons from '@/assets/Icons';
+import { useAccount } from 'wagmi';
 
 const TextInput = () => {
   const [input, setInput] = useState('');

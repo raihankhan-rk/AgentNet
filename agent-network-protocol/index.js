@@ -9,6 +9,7 @@ import { createLibp2p } from "libp2p";
 import { SystemAgent } from './agents/SystemAgent.js';
 import { UserAgent } from './agents/UserAgent.js';
 import { getProtocolTools } from './tools.js';
+import { NillionService } from './memory/NillionService.js';
 
 export default class AgentNetworkProtocol {
     constructor() {
@@ -18,6 +19,7 @@ export default class AgentNetworkProtocol {
         this.nodes = new Map();
         this.systemAgents = new Map();
         this.userAgents = new Map();
+        this.nillionService = new NillionService();
     }
 
     async initialize() {
@@ -356,6 +358,25 @@ export default class AgentNetworkProtocol {
             }
         }
     }
+
+    // async getUserContext(walletAddress) {
+    //     console.log('Nillion: Protocol forwarding getUserContext');
+    //     return this.nillionService.getUserContext(walletAddress);
+    // }
+
+    async createOrUpdateUserContext(walletAddress, profile) {
+        console.log('Nillion: Protocol forwarding createOrUpdateUserContext');
+        return this.nillionService.createOrUpdateUserContext(walletAddress, profile);
+    }
+
+    async addChatMessage(walletAddress, message) {
+        console.log('Nillion: Protocol forwarding addChatMessage');
+        return this.nillionService.addChatMessage(walletAddress, message);
+    }
+
+    // async extractNameFromMessage(llm, input) {
+    //     return this.nillionService.extractNameFromMessage(llm, input);
+    // }
 
     getTools() {
         return getProtocolTools(this);
