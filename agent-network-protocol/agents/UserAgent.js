@@ -23,6 +23,8 @@ export class UserAgent {
         const agentkit = await CdpAgentkit.configureWithWallet({
             cdpWalletData: this.agentConfig.cdpWalletData || "",
             networkId: this.agentConfig.networkId || "base-sepolia",
+            cdpApiKeyName: this.agentConfig.cdpApiKeyName || "",
+            cdpApiKeyPrivateKey: this.agentConfig.cdpApiKeyPrivateKey || "",
         });
 
         this.agentConfig = {
