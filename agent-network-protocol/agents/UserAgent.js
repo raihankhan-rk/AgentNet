@@ -4,7 +4,8 @@ import { HumanMessage } from "@langchain/core/messages";
 import { MemorySaver } from "@langchain/langgraph";
 import { createReactAgent } from "@langchain/langgraph/prebuilt";
 import { ChatOpenAI } from "@langchain/openai";
-import { DEFAULT_SYSTEM_PROMPT } from "./prompts.js";
+
+// import { v4 as uuidv4 } from 'uuid';
 
 export class UserAgent {
     constructor(agentConfig, protocol) {
@@ -13,14 +14,6 @@ export class UserAgent {
         this.agent = null;
         this.config = null;
         this.ephemeralNode = null;
-        this.runnableConfig = {
-            configurable: {
-                thread_id: "User_Agent",
-                metadata: {
-                    agent_type: "user",
-                },
-            },
-        };
     }
 
     async initialize() {
@@ -32,6 +25,8 @@ export class UserAgent {
         const agentkit = await CdpAgentkit.configureWithWallet({
             cdpWalletData: this.agentConfig.cdpWalletData || "",
             networkId: this.agentConfig.networkId || "base-sepolia",
+            cdpApiKeyName: this.agentConfig.cdpApiKeyName || "",
+            cdpApiKeyPrivateKey: this.agentConfig.cdpApiKeyPrivateKey || "",
         });
 
         this.agentConfig = {
@@ -44,14 +39,24 @@ export class UserAgent {
         // Setup tools
         const cdpToolkit = new CdpToolkit(agentkit);
         const cdpTools = cdpToolkit.getTools();
-        const protocolTools = this.protocol.getTools(); // Get tools from protocol
-        const tools = [...cdpTools, ...protocolTools];
+        const protocolTools = this.protocol.getTools();
+        const customTools = this.getCustomTools?.() || [];
+        const tools = [...cdpTools, ...protocolTools, ...customTools];
+
+        this.config = {
+            configurable: {
+                thread_id: this.agentConfig.threadId || "User_Agent",
+                metadata: {
+                    agent_type: "user",
+                },
+            },
+        };
 
         this.agent = createReactAgent({
             llm,
             tools,
             checkpointSaver: new MemorySaver(),
-            messageModifier: this.agentConfig.systemPrompt || DEFAULT_SYSTEM_PROMPT,
+            messageModifier: this.agentConfig.systemPrompt,
         });
     }
 
@@ -79,42 +84,61 @@ export class UserAgent {
 
     async handleMessage(message) {
         try {
-            await this.createEphemeralNode();
-
-            console.log('\n[DEBUG] User Agent processing message:', message);
+            console.log('[DEBUG] User Agent processing message:', message);
             const stream = await this.agent.stream(
                 { messages: [new HumanMessage(message)] },
-                this.runnableConfig
+                this.config
             );
 
+            this.protocol.addChatMessage(this.agentConfig.walletAddress, {sender: "user", message: message});
+    
             let response = "";
             for await (const chunk of stream) {
-                if ("agent" in chunk) {
-                    response += chunk.agent.messages[0].content + "\n";
-                } else if ("tools" in chunk) {
-                    response += chunk.tools.messages[0].content + "\n";
+                if ("agent" in chunk && chunk.agent.messages[0].content) {
+                    const content = chunk.agent.messages[0].content;
+                    if (!content.startsWith('{') && !content.startsWith('[')) {
+                        response = content;
+                        this.protocol.addChatMessage(this.agentConfig.walletAddress, {sender: "agent", message: response});
+                    }
+                } else if ("tools" in chunk && chunk.tools.messages[0].content) {
+                    const content = chunk.tools.messages[0].content;
+                    if (!content.startsWith('{') && !content.startsWith('[')) {
+                        response = content;
+                    }
                 }
             }
-
+    
             console.log('[DEBUG] User Agent finished processing');
-            // Clear line and move cursor up for cleaner output
-            process.stdout.write('\x1b[2K\r');
             return {
                 type: "response",
-                content: response.trim(),
+                content: response.trim()
             };
         } catch (error) {
-            console.error('\n[ERROR] User Agent error:', error);
+            console.error('[DEBUG] User Agent error:', error);
             return {
                 type: "error",
-                content: `Error processing request: ${error instanceof Error ? error.message : "Unknown error"
-                    }`,
+                content: `Error processing request: ${error instanceof Error ? error.message : "Unknown error"}`
             };
         }
-    }
+    } 
 
     async cleanup() {
-        await this.destroyEphemeralNode();
+        try {
+            console.log('\n[DEBUG] Starting UserAgent cleanup...');
+            await this.destroyEphemeralNode();
+            
+            if (this.agent) {
+                const memory = this.agent.checkpointSaver;
+                if (memory) {
+                    await memory.clear();
+                }
+            }
+            
+            console.log('[DEBUG] UserAgent cleanup completed');
+        } catch (error) {
+            console.error('[ERROR] Error during UserAgent cleanup:', error);
+            throw error;
+        }
     }
 
     getAgent() {
@@ -125,10 +149,28 @@ export class UserAgent {
     }
 
     getConfig() {
-        return this.runnableConfig;
+        if (!this.config) {
+            throw new Error('Agent not initialized. Call initialize() first.');
+        }
+        return this.config;
     }
 
     getPendingResponses() {
         return this.protocol.pendingResponses;
     }
-}
+
+    getCustomTools() {
+        return [];
+    }
+
+    async getWalletAddress() {
+        if (!this.agentConfig.walletAddress) {
+            throw new Error('No wallet address available. Make sure CDP wallet is configured.');
+        }
+        return this.agentConfig.walletAddress;
+    }
+
+    async getNetworkId() {
+        return this.agentConfig.networkId || "base-sepolia";
+    }
+} 

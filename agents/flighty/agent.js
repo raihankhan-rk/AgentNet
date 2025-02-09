@@ -21,6 +21,8 @@ export class FlightyAgent {
         });
 
         const agentkit = await CdpAgentkit.configureWithWallet({
+            cdpApiKeyName: this.agentConfig.cdpApiKeyName || "",
+            cdpApiKeyPrivateKey: this.agentConfig.cdpApiKeyPrivateKey || "",
             cdpWalletData: this.agentConfig.cdpWalletData || "",
             networkId: this.agentConfig.networkId || "base-sepolia",
         });

@@ -1,8 +1,8 @@
 import dotenv from "dotenv";
 import * as readline from "readline";
 import AgentNetworkProtocol from "../../agent-network-protocol/index.js";
-import { FlightyAgent } from "./agent.js";
 import { getAgentEnv } from "../utils/loadEnv.js";
+import { FlightyAgent } from "./agent.js";
 
 dotenv.config();
 

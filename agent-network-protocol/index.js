@@ -6,6 +6,10 @@ import { noise } from "@libp2p/noise";
 import { tcp } from "@libp2p/tcp";
 import axios from "axios";
 import { createLibp2p } from "libp2p";
+import { SystemAgent } from './agents/SystemAgent.js';
+import { UserAgent } from './agents/UserAgent.js';
+import { getProtocolTools } from './tools.js';
+import { NillionService } from './memory/NillionService.js';
 
 export default class AgentNetworkProtocol {
     constructor() {
@@ -13,6 +17,9 @@ export default class AgentNetworkProtocol {
         this.messageHandlers = new Map();
         this.pendingResponses = new Map();
         this.nodes = new Map();
+        this.systemAgents = new Map();
+        this.userAgents = new Map();
+        this.nillionService = new NillionService();
     }
 
     async initialize() {
@@ -72,24 +79,27 @@ export default class AgentNetworkProtocol {
         return node;
     }
 
-    async deployAgent(agentInstance, agentMetadata) {
+    async deploySystemAgent(agentConfig, agentMetadata) {
         if (!this.baseConfig) {
             throw new Error('Protocol not initialized. Call initialize() first.');
         }
 
         const { name, description, capabilities, walletAddress } = agentMetadata;
-
         if (!name || !description || !capabilities) {
             throw new Error('Missing required agent metadata');
         }
+
+        const systemAgent = new SystemAgent(agentConfig);
+        await systemAgent.initialize();
 
         const node = await this.createNode();
         const peerId = node.peerId.toString();
 
         this.nodes.set(peerId, node);
+        this.systemAgents.set(peerId, systemAgent);
 
         this.messageHandlers.set(peerId, async (message) => {
-            const response = await agentInstance.handleMessage(message);
+            const response = await systemAgent.handleMessage(message);
             return response;
         });
 
@@ -101,10 +111,9 @@ export default class AgentNetworkProtocol {
                 capabilities,
                 walletAddress
             });
-            console.log('Successfully registered agent:', name, 'with peerId:', peerId);
+            console.log('Successfully registered system agent:', name, 'with peerId:', peerId);
 
             await new Promise(resolve => setTimeout(resolve, 1000));
-
             await this.connectNodes();
 
         } catch (error) {
@@ -118,6 +127,23 @@ export default class AgentNetworkProtocol {
             peerId,
             agentMetadata
         };
+    }
+
+    async createUserAgent(agentConfig) {
+        if (!this.baseConfig) {
+            throw new Error('Protocol not initialized. Call initialize() first.');
+        }
+
+        const userAgent = new UserAgent(agentConfig, this);
+        await userAgent.initialize();
+
+        const node = await this.createNode();
+        const peerId = node.peerId.toString();
+
+        this.nodes.set(peerId, node);
+        this.userAgents.set(peerId, userAgent);
+
+        return userAgent;
     }
 
     async findAgentsByCapability(capability) {
@@ -331,5 +357,28 @@ export default class AgentNetworkProtocol {
                 }
             }
         }
+    }
+
+    // async getUserContext(walletAddress) {
+    //     console.log('Nillion: Protocol forwarding getUserContext');
+    //     return this.nillionService.getUserContext(walletAddress);
+    // }
+
+    async createOrUpdateUserContext(walletAddress, profile) {
+        console.log('Nillion: Protocol forwarding createOrUpdateUserContext');
+        return this.nillionService.createOrUpdateUserContext(walletAddress, profile);
+    }
+
+    async addChatMessage(walletAddress, message) {
+        console.log('Nillion: Protocol forwarding addChatMessage');
+        return this.nillionService.addChatMessage(walletAddress, message);
+    }
+
+    // async extractNameFromMessage(llm, input) {
+    //     return this.nillionService.extractNameFromMessage(llm, input);
+    // }
+
+    getTools() {
+        return getProtocolTools(this);
     }
 }
