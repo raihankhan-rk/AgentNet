@@ -1,6 +1,6 @@
 services:
   app-prod:
-    image: ${DOCKER_REGISTRY:-3xbuilds}/chat-prod:${TAG:-latest}
+    image: ${DOCKER_REGISTRY:-3xbuilds}/agentnet-prod:${TAG:-latest}
     build:
       context: ../..  # Assuming docker-compose.yml is in websites/chat
       target: runner
@@ -8,7 +8,7 @@ services:
       args:
         - NODE_ENV=production
         - NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=${NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY}
-    container_name: chat-prod
+    container_name: agentnet-prod
     restart: unless-stopped
     ports:
       - "${PROD_PORT:-127.0.0.1:3000}:3000"
@@ -22,7 +22,7 @@ services:
       - prod
 
   app-dev:
-    image: ${DOCKER_REGISTRY:-your-registry}/chat-dev:${TAG:-latest}
+    image: ${DOCKER_REGISTRY:-your-registry}/agentnet-dev:${TAG:-latest}
     build:
       context: ../..  # Assuming docker-compose.yml is in websites/chat
       target: runner
@@ -30,7 +30,7 @@ services:
       args:
         - NODE_ENV=production
         - NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=${NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY}
-    container_name: chat-dev
+    container_name: agentnet-dev
     restart: unless-stopped
     ports:
       - "${DEV_PORT:-127.0.0.1:3002}:3000"
