@@ -80,40 +80,43 @@ export class UserAgent {
 
     async handleMessage(message) {
         try {
-            await this.createEphemeralNode();
-
-            console.log('\n[DEBUG] User Agent processing message:', message);
+            console.log('[DEBUG] User Agent processing message:', message);
             const stream = await this.agent.stream(
                 { messages: [new HumanMessage(message)] },
                 this.config
             );
-
+    
             let response = "";
             for await (const chunk of stream) {
-                if ("agent" in chunk) {
-                    response += chunk.agent.messages[0].content + "\n";
-                } else if ("tools" in chunk) {
-                    response += chunk.tools.messages[0].content + "\n";
+                // Only include the final response content, not the intermediate data
+                if ("agent" in chunk && chunk.agent.messages[0].content) {
+                    const content = chunk.agent.messages[0].content;
+                    // Skip if the content is JSON-like
+                    if (!content.startsWith('{') && !content.startsWith('[')) {
+                        response = content;
+                    }
+                } else if ("tools" in chunk && chunk.tools.messages[0].content) {
+                    const content = chunk.tools.messages[0].content;
+                    // Skip if the content is JSON-like
+                    if (!content.startsWith('{') && !content.startsWith('[')) {
+                        response = content;
+                    }
                 }
             }
-
+    
             console.log('[DEBUG] User Agent finished processing');
-            // Clear line and move cursor up for cleaner output
-            process.stdout.write('\x1b[2K\r');
             return {
                 type: "response",
-                content: response.trim(),
+                content: response.trim()
             };
         } catch (error) {
-            console.error('\n[ERROR] User Agent error:', error);
+            console.error('[DEBUG] User Agent error:', error);
             return {
                 type: "error",
-                content: `Error processing request: ${
-                    error instanceof Error ? error.message : "Unknown error"
-                }`,
+                content: `Error processing request: ${error instanceof Error ? error.message : "Unknown error"}`
             };
         }
-    }
+    } 
 
     async cleanup() {
         try {
