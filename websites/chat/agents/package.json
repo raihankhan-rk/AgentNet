@@ -16,6 +16,7 @@
         "typescript": "^5.7.3"
     },
     "dependencies": {
+        "agent-network-protocol": "file:../../../agent-network-protocol/agent-network-protocol-1.0.0.tgz",
         "dotenv": "^16.4.7"
     }
 }
