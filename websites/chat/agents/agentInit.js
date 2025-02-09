@@ -1,5 +1,4 @@
 import dotenv from "dotenv";
-import path from "path";
 import AgentNetworkProtocol from "../../../agent-network-protocol/index.js";
 import { AIRBNB_SYSTEM_PROMPT } from "./airbnb/prompts.js";
 import { createTransactionVerificationTool as createAirbnbTransactionTool, createBookHotelTool, createGetBookingsTool, createGetHotelDetailsTool, createSearchHotelsTool } from "./airbnb/tools.js";
@@ -10,13 +9,24 @@ import { loadEnvFromFolder } from "./utils/loadEnv.js";
 
 dotenv.config();
 
+// Add this ASCII art banner
+const BANNER = `
+                                                                        
+ _____             _   _____     _      _____         _               _ 
+|  _  |___ ___ ___| |_|   | |___| |_   |  _  |___ ___| |_ ___ ___ ___| |
+|     | . | -_|   |  _| | | | -_|  _|  |   __|  _| . |  _| . |  _| . | |
+|__|__|_  |___|_|_|_| |_|___|___|_|    |__|  |_| |___|_| |___|___|___|_|
+      |___|                                                                                                                                                            
+`;
+
+// Add this before your server starts
+console.log('\x1b[36m%s\x1b[0m', BANNER); // Print in cyan color
+
 async function initializeAgents() {
     const protocol = new AgentNetworkProtocol();
     await protocol.initialize();
 
-    const flightyEnv = loadEnvFromFolder(path.join(process.cwd(), 'agents/flighty'));
-    const airbnbEnv = loadEnvFromFolder(path.join(process.cwd(), 'agents/airbnb'));
-    const userEnv = loadEnvFromFolder(path.join(process.cwd(), 'agents/user-agent'));
+    const env = loadEnvFromFolder();
 
     // Initialize system agents
     console.log('Initializing Flighty Agent...');
@@ -30,8 +40,10 @@ async function initializeAgents() {
     console.log('Deploying Flighty Agent...');
     const flightyDeployment = await protocol.deploySystemAgent({
         model: "gpt-4o-mini",
-        cdpWalletData: flightyEnv.CDP_WALLET_DATA,
-        networkId: flightyEnv.NETWORK_ID || "base-sepolia",
+        cdpWalletData: env.FLIGHTY_CDP_WALLET_DATA,
+        networkId: env.NETWORK_ID || "base-sepolia",
+        cdpApiKeyName: env.CDP_API_KEY_NAME || "",
+        cdpApiKeyPrivateKey: env.CDP_API_KEY_PRIVATE_KEY || "",
         systemPrompt: FLIGHTY_SYSTEM_PROMPT,
         threadId: "Flighty_Agent",
         type: "flight-booking",
@@ -41,7 +53,7 @@ async function initializeAgents() {
         name: "Flighty Travel Assistant",
         description: "An AI agent that helps users search and book flights",
         capabilities: ["flight-booking"],
-        walletAddress: JSON.parse(flightyEnv.CDP_WALLET_DATA).defaultAddressId
+        walletAddress: JSON.parse(env.FLIGHTY_CDP_WALLET_DATA).defaultAddressId
     });
 
     console.log('Initializing Airbnb Agent...');
@@ -56,8 +68,10 @@ async function initializeAgents() {
     console.log('Deploying Airbnb Agent...');
     const airbnbDeployment = await protocol.deploySystemAgent({
         model: "gpt-4o-mini",
-        cdpWalletData: airbnbEnv.CDP_WALLET_DATA,
-        networkId: airbnbEnv.NETWORK_ID || "base-sepolia",
+        cdpWalletData: env.AIRBNB_CDP_WALLET_DATA,
+        networkId: env.NETWORK_ID || "base-sepolia",
+        cdpApiKeyName: env.CDP_API_KEY_NAME || "",
+        cdpApiKeyPrivateKey: env.CDP_API_KEY_PRIVATE_KEY || "",
         systemPrompt: AIRBNB_SYSTEM_PROMPT,
         threadId: "Airbnb_Agent",
         type: "accommodation-booking",
@@ -67,15 +81,17 @@ async function initializeAgents() {
         name: "Airbnb Accommodation Assistant",
         description: "An AI agent that helps users search and book accommodations",
         capabilities: ["accommodation-booking"],
-        walletAddress: JSON.parse(airbnbEnv.CDP_WALLET_DATA).defaultAddressId
+        walletAddress: JSON.parse(env.AIRBNB_CDP_WALLET_DATA).defaultAddressId
     });
 
     // Initialize user agent
     console.log('Initializing User Agent...');
     const userAgent = await protocol.createUserAgent({
         model: "gpt-4o-mini",
-        cdpWalletData: userEnv.CDP_WALLET_DATA,
-        networkId: userEnv.NETWORK_ID || "base-sepolia",
+        cdpWalletData: env.USER_CDP_WALLET_DATA,
+        networkId: env.NETWORK_ID || "base-sepolia",
+        cdpApiKeyName: env.CDP_API_KEY_NAME || "",
+        cdpApiKeyPrivateKey: env.CDP_API_KEY_PRIVATE_KEY || "",
         systemPrompt: DEFAULT_SYSTEM_PROMPT,
         threadId: "User_Agent"
     });
