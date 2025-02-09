@@ -1,0 +1,37 @@
+services:
+  registry:
+    image: ${DOCKER_REGISTRY:-3xbuilds}/agentnet-registry:${TAG:-latest}
+    build:
+      context: .
+      target: registry
+      dockerfile: Dockerfile
+      args:
+        - NODE_ENV=production
+    container_name: agentnet-registry
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+    profiles: 
+      - prod
+
+  chat:
+    image: ${DOCKER_REGISTRY:-3xbuilds}/agentnet-chat:${TAG:-latest}
+    build:
+      context: .
+      target: chat
+      dockerfile: Dockerfile
+      args:
+        - NODE_ENV=production
+    container_name: agentnet-chat
+    restart: unless-stopped
+    ports:
+      - "3001:3000"
+    environment:
+      - NODE_ENV=production
+      - REGISTRY_URL=http://registry:3000
+    depends_on:
+      - registry
+    profiles: 
+      - prod

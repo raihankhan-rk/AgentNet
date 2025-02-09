@@ -10,3 +10,9 @@ README.md
 .env.staging
 .env.dev
 .env.local
+**/node_modules
+**/build
+**/.next
+**/dist
+**/.env*
+**/*.log
