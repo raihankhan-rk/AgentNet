@@ -6,12 +6,12 @@ ENV NEXT_TELEMETRY_DISABLED=1
 # Dependencies stage for agent-network-protocol
 FROM base AS registry-deps
 COPY agent-network-protocol/package*.json ./
-RUN npm ci
+RUN npm install
 
 # Dependencies stage for chat website
 FROM base AS chat-deps
 COPY websites/chat/package*.json ./
-RUN npm ci
+RUN npm install
 
 # Registry server build stage
 FROM base AS registry
@@ -23,8 +23,14 @@ CMD ["node", "registryServer.js"]
 # Chat website build stage
 FROM base AS chat-builder
 COPY --from=chat-deps /app/node_modules ./node_modules
+COPY agent-network-protocol ./agent-network-protocol
+WORKDIR /app/agent-network-protocol
+RUN npm install
+
+WORKDIR /app
 COPY . .
 WORKDIR /app/websites/chat
+RUN npm install
 RUN NEXT_PRIVATE_STANDALONE=true npm run build
 
 # Chat website production stage
