@@ -24,11 +24,11 @@ export function WalletComponents() {
  
   return (
     <Wallet className='text-black w-full hover:-translate-y-1 duration-200'>
-  <ConnectWallet className='hover:text-[#7B88F9] bg-gradient-to-br hover:text-[] from-[#abb3ff] to-[#fecdff] rounded hover:bg-[#7B88F9] w-full duration-200' >
+  <ConnectWallet  className='hover:text-[#7B88F9] bg-gradient-to-br hover:text-[] h-12 from-[#abb3ff] to-[#fecdff] rounded hover:bg-[#7B88F9] w-full duration-200' >
     {/* <Avatar className="h-6 w-6" /> */}
     <Name />
   </ConnectWallet>
-  <WalletDropdown className='bg-[#7B88F9]'>
+  <WalletDropdown className='bg-[#7B88F9] -translate-y-40'>
     <Identity className="px-4 pt-3 pb-2 " hasCopyAddressOnClick>
       <Avatar className="h-6 w-6" />
       <Name />

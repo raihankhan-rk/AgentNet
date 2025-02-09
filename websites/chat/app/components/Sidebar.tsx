@@ -37,8 +37,8 @@ const Sidebar = () => {
         </button>
       </div> */}
         <div className=' w-full flex flex-col h-full justify-end gap-2 py-2 items-end backdrop-blur-xl mt-2'>
-            {address && <FundButton hideIcon={true} text='Fund Agent'  className='hover:-translate-y-1 text-white hover:text-[#7B88F9] duration-200 bg-gradient-to-br rounded from-[#C4CAFF] to-[#F8E1F9] w-full' />}
             <WalletComponents />
+            {address && <FundButton hideIcon={true} text='Fund Agent'  className='hover:-translate-y-1 text-white hover:text-[#7B88F9] duration-200 bg-gradient-to-br rounded from-[#98a2ff] to-[#fcaaff] w-full' />}
           </div>
     </div>
   );
