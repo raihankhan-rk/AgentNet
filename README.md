@@ -60,7 +60,7 @@ cd agent-network-protocol
 npm install
 
 # Install dependencies for each individual agent
-cd agents/airbnb
+cd websites/chat/agents/airbnb
 npm install
 
 cd ../flighty
@@ -71,18 +71,23 @@ npm install
 ```
 
 ### 3. Set up environment variables:
-Create `.env` files in the following directories:
-- `/agents/flighty/.env`
-- `/agents/airbnb/.env`
-- `/agents/user-agent/.env`
+Create `.env` files in the following directory:
+- `/websites/chat/agents/.env`
 
 Required environment variables:
 ```env
-CDP_WALLET_DATA=your_wallet_data
-NETWORK_ID=base-sepolia
-CDP_API_KEY_NAME=your_api_key_name
-CDP_API_KEY_PRIVATE_KEY=your_private_key
-OPENAI_API_KEY=your_openai_key
+NEXT_PUBLIC_ONCHAINKIT_API_KEY=your_onchainkit_api
+NEXT_PUBLIC_CDP_PROJECT_ID = your_cdp_project_id
+AIRBNB_CDP_WALLET_DATA=your_airbnb_cdp_wallet_data
+FLIGHTY_CDP_WALLET_DATA=your_flighty_cdp_wallet_data
+USER_CDP_WALLET_DATA=your_user_cdp_wallet_data
+CDP_API_KEY_NAME=your_cdp_api_key_name
+CDP_API_KEY_PRIVATE_KEY=your_api_private_key
+OPENAI_API_KEY=your_openai_api_key
+NETWORK_ID=your_network_id
+INFURA_RPC="your_infura_rpc"
+PRIVATE_KEY="your_private_key"
+SCHEMA_ID = your_nillion_schema_id
 ```
 
 ### 4. Start the development servers:
@@ -94,9 +99,9 @@ Run the following commands to start the required services:
 cd agent-network-protocol
 node registryServer.js
 
-# Open a new terminal, navigate to the agents directory, and start the agents
-cd agents
-npm start
+# Open a new terminal, navigate to the chat website directory, and start the website
+cd website/chat
+npm run dev
 ```
 
 ## 🌐 Agent Network Protocol
